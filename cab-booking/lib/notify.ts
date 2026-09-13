@@ -1,5 +1,5 @@
 import { BUSINESS } from "@/config/business";
-import { cabTypeName, escapeHtml, inr, istDateTime, tripTypeLabel } from "@/lib/format";
+import { cabTypeName, escapeHtml, inr, inrExact, istDateTime, tripTypeLabel } from "@/lib/format";
 import type { Order } from "@/lib/types";
 
 /**
@@ -131,8 +131,8 @@ function ownerTelegramText(o: Order, heading: string): string {
     "",
     ...tripSummaryLines(o).map((l) => escapeHtml(l)),
     "",
-    `💰 Total ${inr(o.totalAmount)} · Advance ₹${o.payableAmount} · Balance to driver ${inr(o.balanceAmount)}`,
-    o.paymentUtr ? `🧾 UTR: <code>${escapeHtml(o.paymentUtr)}</code>` : "⏳ Advance not paid yet",
+    `💰 Total ${inr(o.totalAmount)} · Advance ${inrExact(o.payableAmount)} · Balance to driver ${inr(o.balanceAmount)}`,
+    o.paymentVerifiedAt ? "✅ Advance received" : "⏳ Advance not received yet",
     campaign ? `📣 ${escapeHtml(campaign)}` : "",
     "",
     `<a href="${BUSINESS.siteUrl}/admin/orders/${o.id}">Open in admin →</a>`,
@@ -151,9 +151,9 @@ function ownerEmailHtml(o: Order, heading: string): string {
       return [l.slice(0, i), l.slice(i + 1).trim()];
     }),
     ["Total", inr(o.totalAmount)],
-    ["Advance requested", `₹${o.payableAmount}`],
+    ["Advance requested", inrExact(o.payableAmount)],
     ["Balance to driver", inr(o.balanceAmount)],
-    ["UTR", o.paymentUtr ?? "— not paid yet —"],
+    ["Advance", o.paymentVerifiedAt ? "Received" : "Not received yet"],
     ["Campaign", [o.utm?.source, o.utm?.medium, o.utm?.campaign].filter(Boolean).join(" / ") || "direct"],
   ];
   return `
@@ -175,16 +175,16 @@ function ownerEmailHtml(o: Order, heading: string): string {
 }
 
 function customerEmailHtml(o: Order): string {
-  const paid = o.status !== "PENDING_PAYMENT";
+  const confirmed = o.status !== "PENDING_PAYMENT" && o.status !== "CANCELLED";
   return `
     <div style="font-family:system-ui,Segoe UI,Arial,sans-serif;max-width:620px">
       <h2 style="margin:0 0 4px">Booking ${escapeHtml(o.id)}</h2>
       <p style="margin:0 0 16px;color:#555">
         Thanks ${escapeHtml(o.customerName)} — we have your request.
         ${
-          paid
-            ? `We are verifying your advance and will send your cab and driver details within ${BUSINESS.confirmationWindowHours} hours.`
-            : `Your booking is held but <strong>not confirmed until the advance is paid</strong>.`
+          confirmed
+            ? `Your advance is received. We will send your cab and driver details within ${BUSINESS.confirmationWindowHours} hours.`
+            : `Your booking is held but <strong>not confirmed until the advance is paid</strong>. Pay on your booking page, then message us on WhatsApp.`
         }
       </p>
       <table cellpadding="6" style="border-collapse:collapse;width:100%;font-size:14px">
@@ -195,7 +195,7 @@ function customerEmailHtml(o: Order): string {
           })
           .join("")}
         <tr><td style="border-bottom:1px solid #eee;color:#666">Total fare</td><td style="border-bottom:1px solid #eee"><strong>${inr(o.totalAmount)}</strong></td></tr>
-        <tr><td style="border-bottom:1px solid #eee;color:#666">Advance</td><td style="border-bottom:1px solid #eee"><strong>₹${escapeHtml(o.payableAmount)}</strong></td></tr>
+        <tr><td style="border-bottom:1px solid #eee;color:#666">Advance</td><td style="border-bottom:1px solid #eee"><strong>${escapeHtml(inrExact(o.payableAmount))}</strong></td></tr>
         <tr><td style="border-bottom:1px solid #eee;color:#666">Pay to driver at drop</td><td style="border-bottom:1px solid #eee"><strong>${inr(o.balanceAmount)}</strong></td></tr>
       </table>
       <p style="margin-top:16px;font-size:13px;color:#b45309;background:#fffbeb;border:1px solid #fde68a;padding:10px 12px;border-radius:6px">
@@ -236,7 +236,7 @@ export async function notifyNewOrder(o: Order): Promise<NotifyResult[]> {
     sendWhatsApp(`91${o.customerPhone}`, process.env.WHATSAPP_TEMPLATE_NEW_ORDER || "booking_received", [
       o.customerName,
       o.id,
-      `₹${o.payableAmount}`,
+      inrExact(o.payableAmount),
     ]),
   ];
   if (o.customerEmail) {
@@ -245,17 +245,20 @@ export async function notifyNewOrder(o: Order): Promise<NotifyResult[]> {
   return Promise.all(jobs);
 }
 
-/** Fired when the customer submits a UTR. This is a claim, not a verification. */
-export async function notifyPaymentClaimed(o: Order): Promise<NotifyResult[]> {
-  const heading = "💰 Advance paid — VERIFY THIS UTR IN YOUR BANK";
-  const jobs: Promise<NotifyResult>[] = [
-    sendTelegram(ownerTelegramText(o, heading)),
-    sendEmail(BUSINESS.email, `${heading} · ${o.id} · ₹${o.payableAmount}`, ownerEmailHtml(o, heading)),
-  ];
-  if (o.customerEmail) {
-    jobs.push(sendEmail(o.customerEmail, `Booking ${o.id} confirmed — ${BUSINESS.brandName}`, customerEmailHtml(o)));
-  }
-  return Promise.all(jobs);
+/**
+ * Fired when YOU mark the advance as received in the admin panel. That is the
+ * only way a booking becomes confirmed — there is no path where the customer
+ * confirms their own payment.
+ */
+export async function notifyPaymentConfirmed(o: Order): Promise<NotifyResult[]> {
+  if (!o.customerEmail) return [];
+  return Promise.all([
+    sendEmail(
+      o.customerEmail,
+      `Booking ${o.id} confirmed \u2014 ${BUSINESS.brandName}`,
+      customerEmailHtml(o),
+    ),
+  ]);
 }
 
 /** Fired when you fill in the cab and driver details in the admin panel. */
@@ -273,71 +276,6 @@ export async function notifyAssignment(o: Order): Promise<NotifyResult[]> {
     jobs.push(sendEmail(o.customerEmail, `Your cab for ${o.id} — ${BUSINESS.brandName}`, assignmentEmailHtml(o)));
   }
   return Promise.all(jobs);
-}
-
-/**
- * Fired when a bank alert matched a booking and confirmed it with no human
- * involved. Informational for you; the customer's page updates on its own.
- */
-export async function notifyPaymentAutoConfirmed(o: Order): Promise<NotifyResult[]> {
-  const heading = "\u2705 Advance auto-confirmed from your bank alert";
-  const jobs: Promise<NotifyResult>[] = [
-    sendTelegram(ownerTelegramText(o, heading)),
-    sendEmail(
-      BUSINESS.email,
-      `${heading} \u00b7 ${o.id} \u00b7 \u20b9${o.payableAmount}`,
-      ownerEmailHtml(o, heading),
-    ),
-  ];
-  if (o.customerEmail) {
-    jobs.push(
-      sendEmail(o.customerEmail, `Booking ${o.id} confirmed \u2014 ${BUSINESS.brandName}`, customerEmailHtml(o)),
-    );
-  }
-  return Promise.all(jobs);
-}
-
-/**
- * Fired when money arrived that could not be placed against exactly one
- * booking. This needs a person, so it is loud and carries the raw alert.
- */
-export async function notifyUnmatchedCredit(
-  credit: { amount: string; reference?: string; payer?: string; raw: string },
-  candidateIds: string[],
-): Promise<NotifyResult[]> {
-  const ambiguous = candidateIds.length > 1;
-  const heading = ambiguous
-    ? "\u26a0\ufe0f Credit matches MORE THAN ONE booking \u2014 confirm by hand"
-    : "\u26a0\ufe0f Credit received with NO matching booking";
-
-  const lines = [
-    `<b>${escapeHtml(heading)}</b>`,
-    "",
-    `\ud83d\udcb0 <b>\u20b9${escapeHtml(credit.amount)}</b>`,
-    credit.reference ? `\ud83e\uddfe <code>${escapeHtml(credit.reference)}</code>` : "",
-    credit.payer ? `\ud83d\udc64 ${escapeHtml(credit.payer)}` : "",
-    ambiguous ? `\ud83d\udd0e Candidates: ${candidateIds.map(escapeHtml).join(", ")}` : "",
-    "",
-    `<i>${escapeHtml(credit.raw.slice(0, 400))}</i>`,
-    "",
-    `<a href="${BUSINESS.siteUrl}/admin?q=${encodeURIComponent(credit.amount)}">Find it in admin \u2192</a>`,
-  ].filter(Boolean);
-
-  const html = `
-    <div style="font-family:system-ui,Segoe UI,Arial,sans-serif;max-width:620px">
-      <h2 style="margin:0 0 12px">${escapeHtml(heading)}</h2>
-      <p style="margin:0 0 8px">Amount: <strong>\u20b9${escapeHtml(credit.amount)}</strong></p>
-      ${credit.reference ? `<p style="margin:0 0 8px">Reference: <strong>${escapeHtml(credit.reference)}</strong></p>` : ""}
-      ${credit.payer ? `<p style="margin:0 0 8px">From: <strong>${escapeHtml(credit.payer)}</strong></p>` : ""}
-      ${ambiguous ? `<p style="margin:0 0 8px">Candidate bookings: <strong>${candidateIds.map(escapeHtml).join(", ")}</strong></p>` : ""}
-      <pre style="background:#f1f5f9;padding:12px;border-radius:6px;white-space:pre-wrap;font-size:12px">${escapeHtml(credit.raw.slice(0, 800))}</pre>
-      <p><a href="${BUSINESS.siteUrl}/admin" style="background:#0f172a;color:#fff;padding:10px 18px;border-radius:6px;text-decoration:none">Open admin</a></p>
-    </div>`;
-
-  return Promise.all([
-    sendTelegram(lines.join("\n")),
-    sendEmail(BUSINESS.email, `${heading} \u00b7 \u20b9${credit.amount}`, html),
-  ]);
 }
 
 /**

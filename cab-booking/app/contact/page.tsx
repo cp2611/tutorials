@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { LegalPage } from "@/components/Legal";
 import { BUSINESS } from "@/config/business";
 import { SERVICE_CITIES } from "@/config/fares";
+import { generalLink } from "@/lib/whatsapp";
 
 export const metadata: Metadata = { title: "Contact us" };
 
@@ -14,7 +15,14 @@ export default function ContactPage() {
       <h2>Talk to us</h2>
       <ul>
         <li>
-          Phone / WhatsApp:{" "}
+          <a href={generalLink()} target="_blank" rel="noreferrer"
+            className="font-medium text-brand-600 underline">
+            WhatsApp us
+          </a>{" "}
+          — the fastest way to reach us, and where we send your cab details.
+        </li>
+        <li>
+          Phone:{" "}
           <a href={`tel:${BUSINESS.phone}`} className="font-medium text-brand-600 underline">
             {BUSINESS.phone}
           </a>

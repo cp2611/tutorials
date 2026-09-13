@@ -3,7 +3,7 @@ import { redirect } from "next/navigation";
 import type { Metadata } from "next";
 import { isAdmin } from "@/lib/auth";
 import { listOrders, usingPostgres } from "@/lib/db";
-import { inr, istDateTime, tripTypeLabel } from "@/lib/format";
+import { inr, inrExact, istDateTime, tripTypeLabel } from "@/lib/format";
 import { ORDER_STATUSES, STATUS_LABELS, type OrderStatus } from "@/lib/types";
 
 export const dynamic = "force-dynamic";
@@ -11,7 +11,6 @@ export const metadata: Metadata = { title: "Orders", robots: { index: false, fol
 
 const STATUS_STYLES: Record<OrderStatus, string> = {
   PENDING_PAYMENT: "bg-amber-100 text-amber-800",
-  PAYMENT_CLAIMED: "bg-blue-100 text-blue-800",
   CONFIRMED: "bg-indigo-100 text-indigo-800",
   ASSIGNED: "bg-green-100 text-green-800",
   COMPLETED: "bg-ink-200 text-ink-700",
@@ -30,9 +29,9 @@ export default async function AdminPage({
   const orders = await listOrders({ status: filter, search: q });
 
   const counts = {
-    toVerify: orders.filter((o) => o.status === "PAYMENT_CLAIMED").length,
+    awaitingAdvance: orders.filter((o) => o.status === "PENDING_PAYMENT").length,
     toAssign: orders.filter((o) => o.status === "CONFIRMED").length,
-    unpaid: orders.filter((o) => o.status === "PENDING_PAYMENT").length,
+    onTheRoad: orders.filter((o) => o.status === "ASSIGNED").length,
   };
 
   return (
@@ -52,21 +51,11 @@ export default async function AdminPage({
         </p>
       )}
 
-      {process.env.PAYMENT_AUTO_VERIFY === "true" && process.env.UPI_UNIQUE_PAISE !== "true" && (
-        <p className="rounded-xl border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-900">
-          <strong>Auto-verify is on but unique paise is off.</strong> Two open bookings with the
-          same advance are indistinguishable in a bank alert, so neither gets confirmed
-          automatically and both land in your alerts instead. Set
-          <code className="mx-1 rounded bg-amber-100 px-1">UPI_UNIQUE_PAISE=true</code>
-          to give every booking its own amount.
-        </p>
-      )}
-
       <div className="grid gap-3 sm:grid-cols-3">
         {[
-          ["Advance to verify", counts.toVerify, "PAYMENT_CLAIMED"],
+          ["Awaiting advance — call these back", counts.awaitingAdvance, "PENDING_PAYMENT"],
           ["Cabs to assign", counts.toAssign, "CONFIRMED"],
-          ["Unpaid — call these back", counts.unpaid, "PENDING_PAYMENT"],
+          ["Cab assigned", counts.onTheRoad, "ASSIGNED"],
         ].map(([label, count, s]) => (
           <Link key={String(s)} href={`/admin?status=${s}`} className="card p-4 transition hover:border-ink-400">
             <p className="text-sm text-ink-500">{label}</p>
@@ -129,7 +118,7 @@ export default async function AdminPage({
                   </td>
                   <td className="px-4 py-3 text-ink-700">{istDateTime(o.pickupAt)}</td>
                   <td className="px-4 py-3 text-right">
-                    <p className="font-semibold tabular-nums text-ink-900">₹{o.payableAmount}</p>
+                    <p className="font-semibold tabular-nums text-ink-900">{inrExact(o.payableAmount)}</p>
                     <p className="text-xs text-ink-500">of {inr(o.totalAmount)}</p>
                   </td>
                   <td className="px-4 py-3">

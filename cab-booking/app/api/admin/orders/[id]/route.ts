@@ -1,8 +1,8 @@
 import { NextResponse, after } from "next/server";
 import { isAdmin } from "@/lib/auth";
 import { getOrder, updateOrder } from "@/lib/db";
-import { notifyAssignment } from "@/lib/notify";
-import { assignSchema } from "@/lib/validation";
+import { notifyAssignment, notifyPaymentConfirmed } from "@/lib/notify";
+import { assignSchema, verifyPaymentSchema } from "@/lib/validation";
 import { ORDER_STATUSES, type OrderStatus } from "@/lib/types";
 
 export const runtime = "nodejs";
@@ -29,7 +29,23 @@ export async function POST(req: Request, ctx: { params: Promise<{ id: string }> 
 
   switch (action) {
     case "verify_payment": {
-      await updateOrder(id, { status: "CONFIRMED", paymentVerifiedAt: now });
+      const parsed = verifyPaymentSchema.safeParse(Object.fromEntries(form));
+      const updated = await updateOrder(id, {
+        status: "CONFIRMED",
+        paymentVerifiedAt: now,
+        paymentReference: parsed.success
+          ? parsed.data.paymentReference || order.paymentReference
+          : order.paymentReference,
+      });
+      if (updated) {
+        after(async () => {
+          const results = await notifyPaymentConfirmed(updated);
+          const failed = results.filter(
+            (r) => !r.ok && r.error !== "disabled" && r.error !== "not configured",
+          );
+          if (failed.length > 0) console.error("[notify] payment confirmed", id, failed);
+        });
+      }
       break;
     }
 

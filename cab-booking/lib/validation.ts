@@ -46,14 +46,9 @@ export const createOrderSchema = quoteSchema.extend({
   website: z.string().max(0, { error: "Submission rejected." }).optional(),
 });
 
-export const paymentClaimSchema = z.object({
-  /** UPI reference / UTR. Banks issue 12 digits; we accept 8-25 alphanumerics. */
-  utr: z
-    .string()
-    .trim()
-    .min(8, "The UPI reference number is at least 8 characters.")
-    .max(25)
-    .regex(/^[A-Za-z0-9]+$/, "Use only the letters and digits from your UPI reference."),
+/** Optional note you add when marking an advance received. Never customer input. */
+export const verifyPaymentSchema = z.object({
+  paymentReference: z.string().trim().max(40).optional(),
 });
 
 export const assignSchema = z.object({

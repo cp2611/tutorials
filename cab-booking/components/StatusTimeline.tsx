@@ -2,8 +2,7 @@ import type { OrderStatus } from "@/lib/types";
 
 const FLOW: { status: OrderStatus; label: string; hint: string }[] = [
   { status: "PENDING_PAYMENT", label: "Booking received", hint: "We have your trip details" },
-  { status: "PAYMENT_CLAIMED", label: "Advance paid", hint: "We're checking our account" },
-  { status: "CONFIRMED", label: "Confirmed", hint: "Arranging your cab" },
+  { status: "CONFIRMED", label: "Advance confirmed", hint: "Arranging your cab" },
   { status: "ASSIGNED", label: "Cab assigned", hint: "Driver details sent to you" },
 ];
 

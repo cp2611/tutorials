@@ -9,6 +9,7 @@ import { StatusTimeline } from "@/components/StatusTimeline";
 import { getOrder } from "@/lib/db";
 import { inr, istDateTime } from "@/lib/format";
 import { buildUpiQrDataUrl, buildUpiUri } from "@/lib/upi";
+import { questionLink } from "@/lib/whatsapp";
 import { STATUS_LABELS } from "@/lib/types";
 
 export const dynamic = "force-dynamic";
@@ -45,27 +46,19 @@ export default async function BookingPage({ params }: { params: Promise<{ id: st
         </div>
         <p className="mt-3 text-sm leading-relaxed text-ink-600">
           {awaitingPayment
-            ? "Your trip is held. Pay the advance below to confirm it — we can't assign a cab until then."
-            : order.status === "PAYMENT_CLAIMED"
-              ? `Thanks — we're checking our account for your payment and will send cab details within ${BUSINESS.confirmationWindowHours} hours.`
-              : order.status === "CONFIRMED"
-                ? `Payment confirmed. We're assigning your cab and will share driver details within ${BUSINESS.confirmationWindowHours} hours.`
-                : order.status === "ASSIGNED"
-                  ? "Your cab is assigned. Driver details are below."
-                  : order.status === "COMPLETED"
-                    ? "Trip completed. Thanks for travelling with us."
-                    : "This booking was cancelled."}
+            ? "Your trip is held. Pay the advance below and message us on WhatsApp — we can't assign a cab until the advance is in."
+            : order.status === "CONFIRMED"
+              ? `Advance received. We're assigning your cab and will share driver details within ${BUSINESS.confirmationWindowHours} hours.`
+              : order.status === "ASSIGNED"
+                ? "Your cab is assigned. Driver details are below."
+                : order.status === "COMPLETED"
+                  ? "Trip completed. Thanks for travelling with us."
+                  : "This booking was cancelled."}
         </p>
       </section>
 
       {awaitingPayment && (
-        <PaymentPanel
-          bookingId={order.id}
-          upiUri={upiUri}
-          qrDataUrl={qrDataUrl}
-          payableAmount={order.payableAmount}
-          autoVerify={process.env.PAYMENT_AUTO_VERIFY === "true"}
-        />
+        <PaymentPanel order={order} upiUri={upiUri} qrDataUrl={qrDataUrl} />
       )}
 
       {order.status === "ASSIGNED" && (
@@ -114,12 +107,16 @@ export default async function BookingPage({ params }: { params: Promise<{ id: st
       <section className="card p-5 text-sm text-ink-600">
         <h2 className="mb-2 text-base font-bold text-ink-900">Need to change or cancel?</h2>
         <p className="leading-relaxed">
-          Call or WhatsApp us at{" "}
+          <a href={questionLink(order)} target="_blank" rel="noreferrer"
+            className="font-medium text-brand-600 underline">
+            Message us on WhatsApp
+          </a>{" "}
+          or call{" "}
           <a href={`tel:${BUSINESS.phone}`} className="font-medium text-brand-600 underline">
             {BUSINESS.phone}
-          </a>{" "}
-          with your booking number. Cancel more than {REFUND_POLICY.freeCancellationHours} hours before
-          pickup ({istDateTime(order.pickupAt)}) and your advance is refunded in full.
+          </a>
+          . Cancel more than {REFUND_POLICY.freeCancellationHours} hours before pickup (
+          {istDateTime(order.pickupAt)}) and your advance is refunded in full.
         </p>
       </section>
     </div>

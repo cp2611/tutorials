@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import Link from "next/link";
 import { BUSINESS } from "@/config/business";
 import { UtmCatcher } from "@/components/UtmCatcher";
+import { generalLink } from "@/lib/whatsapp";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -41,13 +42,25 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
               </span>
               <span className="text-[15px] sm:text-base">{BUSINESS.brandName}</span>
             </Link>
-            <a
-              href={`tel:${BUSINESS.phone}`}
-              className="rounded-lg bg-accent-500 px-3 py-2 text-sm font-semibold text-ink-900 transition hover:bg-accent-600"
-            >
-              📞 <span className="hidden sm:inline">{BUSINESS.phone}</span>
-              <span className="sm:hidden">Call</span>
-            </a>
+            {/* WhatsApp is where every booking conversation happens, so it is the
+                one action available from every page. */}
+            <div className="flex items-center gap-2">
+              <a
+                href={`tel:${BUSINESS.phone}`}
+                aria-label={`Call ${BUSINESS.phone}`}
+                className="rounded-lg border border-ink-300 px-3 py-2 text-sm font-semibold text-ink-800 transition hover:bg-ink-50"
+              >
+                📞<span className="ml-1 hidden sm:inline">Call</span>
+              </a>
+              <a
+                href={generalLink()}
+                target="_blank"
+                rel="noreferrer"
+                className="rounded-lg bg-[#25D366] px-3 py-2 text-sm font-semibold text-ink-900 transition hover:brightness-95"
+              >
+                WhatsApp
+              </a>
+            </div>
           </div>
         </header>
 

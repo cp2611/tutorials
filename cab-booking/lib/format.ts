@@ -4,6 +4,20 @@ export function inr(amount: number): string {
   return "₹" + amount.toLocaleString("en-IN");
 }
 
+/**
+ * Formats the exact payable string, paise included: "1000.00" → "₹1,000.00".
+ *
+ * The paise are load-bearing when UPI_UNIQUE_PAISE is on, so they are never
+ * rounded away — but the rupees still get Indian digit grouping, so an advance
+ * never reads oddly next to a grouped total.
+ */
+export function inrExact(amount: string): string {
+  const [rupees, paise = "00"] = amount.split(".");
+  const n = Number(rupees);
+  const grouped = Number.isFinite(n) ? n.toLocaleString("en-IN") : rupees;
+  return `₹${grouped}.${paise.padEnd(2, "0")}`;
+}
+
 /** Renders an instant in IST regardless of where the server runs. */
 export function istDateTime(iso?: string): string {
   if (!iso) return "—";

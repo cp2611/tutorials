@@ -1,6 +1,7 @@
 import { BookingFlow } from "@/components/BookingFlow";
 import { BUSINESS } from "@/config/business";
 import { CAB_TYPES, SERVICE_CITIES } from "@/config/fares";
+import { generalLink } from "@/lib/whatsapp";
 
 /**
  * The ad landing page IS the pricing and checkout page.
@@ -36,8 +37,8 @@ export default function HomePage() {
             ["Tell us the trip", "Pick your route, date and cab. See the full fare instantly."],
             ["Pay the advance", "Scan the UPI code. The amount and booking number are already filled in."],
             [
-              "We assign your cab",
-              `Driver and vehicle details reach you within ${BUSINESS.confirmationWindowHours} hours.`,
+              "Message us on WhatsApp",
+              `One tap, details pre-filled. We confirm and assign your cab within ${BUSINESS.confirmationWindowHours} hours.`,
             ],
             ["Travel", "Pay the balance to the driver at drop, plus tolls and parking."],
           ].map(([title, body], i) => (
@@ -64,8 +65,12 @@ export default function HomePage() {
           ))}
         </ul>
         <p className="mt-4 text-sm text-ink-500">
-          Pickups available from {SERVICE_CITIES.join(", ")}. Travelling from somewhere else?
-          Call us at{" "}
+          Pickups available from {SERVICE_CITIES.join(", ")}. Travelling from somewhere else?{" "}
+          <a href={generalLink()} target="_blank" rel="noreferrer"
+            className="font-medium text-brand-600 underline">
+            Message us on WhatsApp
+          </a>{" "}
+          or call{" "}
           <a href={`tel:${BUSINESS.phone}`} className="font-medium text-brand-600 underline">
             {BUSINESS.phone}
           </a>

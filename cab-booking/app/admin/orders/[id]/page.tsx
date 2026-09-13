@@ -8,7 +8,7 @@ import { FareBreakup } from "@/components/FareBreakup";
 import { OrderSummary } from "@/components/OrderSummary";
 import { isAdmin } from "@/lib/auth";
 import { getOrder } from "@/lib/db";
-import { cabTypeName, inr, istDateTime, tripTypeLabel } from "@/lib/format";
+import { cabTypeName, inr, inrExact, istDateTime, tripTypeLabel } from "@/lib/format";
 import { whatsappHandoffLink } from "@/lib/notify";
 import { ORDER_STATUSES, STATUS_LABELS } from "@/lib/types";
 
@@ -79,40 +79,60 @@ export default async function AdminOrderPage({
         <div className="grid gap-5">
           {/* ------------------------------------------------ Payment check */}
           <section className="card p-5">
-            <h2 className="text-base font-bold text-ink-900">1 · Verify the advance</h2>
-            <dl className="mt-3 divide-y divide-ink-100 text-sm">
+            <h2 className="text-base font-bold text-ink-900">1 · Mark the advance received</h2>
+            <p className="mt-1 text-sm text-ink-500">
+              The customer pays by UPI and messages you on WhatsApp. Check the amount below
+              against your bank, then confirm here.
+            </p>
+            <dl className="mt-4 divide-y divide-ink-100 text-sm">
               <div className="flex gap-4 py-2.5">
                 <dt className="w-40 shrink-0 text-ink-500">Expected in bank</dt>
-                <dd className="font-mono text-base font-bold text-ink-900">₹{order.payableAmount}</dd>
+                <dd className="font-mono text-base font-bold text-ink-900">{inrExact(order.payableAmount)}</dd>
               </div>
               <div className="flex gap-4 py-2.5">
-                <dt className="w-40 shrink-0 text-ink-500">UTR from customer</dt>
-                <dd className="font-mono font-semibold text-ink-900">
-                  {order.paymentUtr ?? <span className="font-sans font-normal text-amber-700">Not paid yet</span>}
+                <dt className="w-40 shrink-0 text-ink-500">Confirmed by you</dt>
+                <dd className="text-ink-700">
+                  {order.paymentVerifiedAt ? (
+                    istDateTime(order.paymentVerifiedAt)
+                  ) : (
+                    <span className="text-amber-700">Not yet</span>
+                  )}
                 </dd>
               </div>
-              <div className="flex gap-4 py-2.5">
-                <dt className="w-40 shrink-0 text-ink-500">Submitted</dt>
-                <dd className="text-ink-700">{order.paymentClaimedAt ? istDateTime(order.paymentClaimedAt) : "—"}</dd>
-              </div>
-              <div className="flex gap-4 py-2.5">
-                <dt className="w-40 shrink-0 text-ink-500">Verified by you</dt>
-                <dd className="text-ink-700">{order.paymentVerifiedAt ? istDateTime(order.paymentVerifiedAt) : "—"}</dd>
-              </div>
+              {order.paymentReference && (
+                <div className="flex gap-4 py-2.5">
+                  <dt className="w-40 shrink-0 text-ink-500">Your reference</dt>
+                  <dd className="font-mono font-semibold text-ink-900">{order.paymentReference}</dd>
+                </div>
+              )}
             </dl>
 
-            <p className="mt-3 rounded-xl bg-amber-50 px-4 py-3 text-xs leading-relaxed text-amber-900">
-              A UTR is the customer&apos;s <strong>claim</strong>, not proof. Match the exact amount
-              <strong> ₹{order.payableAmount}</strong> and this reference against your bank statement
-              before you commit a cab — anyone can type a number into that box.
-            </p>
-
-            {order.status === "PAYMENT_CLAIMED" && (
-              <form method="post" action={`/api/admin/orders/${order.id}`} className="mt-4">
+            {order.status === "PENDING_PAYMENT" && (
+              <form method="post" action={`/api/admin/orders/${order.id}`} className="mt-4 grid gap-3">
                 <input type="hidden" name="action" value="verify_payment" />
-                <button className="btn-primary" type="submit">✓ I found this payment — confirm booking</button>
+                <div>
+                  <label className="label" htmlFor="paymentReference">
+                    Reference <span className="font-normal text-ink-400">(optional, for your own records)</span>
+                  </label>
+                  <input id="paymentReference" name="paymentReference" className="input"
+                    placeholder="UTR from your bank statement, or anything you'll recognise" />
+                </div>
+                <button className="btn-primary" type="submit">
+                  ✓ Advance received — confirm this booking
+                </button>
+                <p className="text-xs text-ink-500">
+                  Only confirm once you have actually seen {inrExact(order.payableAmount)} in your account.
+                  A WhatsApp message saying &ldquo;paid&rdquo; is not proof.
+                </p>
               </form>
             )}
+
+            <div className="mt-4 flex flex-wrap gap-2">
+              <a href={`https://wa.me/91${order.customerPhone}`} target="_blank" rel="noreferrer"
+                className="btn-secondary !px-3 !py-1.5 !text-xs">
+                Open customer chat →
+              </a>
+            </div>
           </section>
 
           {/* ------------------------------------------------ Assign a cab */}

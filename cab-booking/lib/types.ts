@@ -2,15 +2,20 @@ import type { Quote } from "@/lib/pricing";
 import type { CabTypeId, TripType } from "@/config/fares";
 
 /**
- * Order lifecycle. The important split is the first two states:
- * an order exists — and reaches you — BEFORE any money moves. A customer who
- * abandons at the payment screen is still a lead you can call back, which is
- * where most of the recovered revenue in this model comes from.
+ * Order lifecycle.
+ *
+ * The important thing is where it starts: an order exists — and reaches you —
+ * BEFORE any money moves. A customer who abandons at the payment screen is
+ * still a lead you can call back, which is where most of the recovered revenue
+ * in this model comes from.
+ *
+ * Only you can move a booking out of PENDING_PAYMENT, after seeing the money in
+ * your own account. There is no state for "the customer says they paid",
+ * because the customer's word was never evidence.
  */
 export const ORDER_STATUSES = [
-  "PENDING_PAYMENT", // Booked, you have been notified, advance not paid yet.
-  "PAYMENT_CLAIMED", // Customer says they paid and gave a UTR. NOT yet verified.
-  "CONFIRMED", // You matched the UTR against your bank. Money is real.
+  "PENDING_PAYMENT", // Booked, you have been notified, advance not received yet.
+  "CONFIRMED", // You saw the advance in your account. Money is real.
   "ASSIGNED", // Cab + driver details filled in; customer can see them.
   "COMPLETED", // Trip done.
   "CANCELLED", // Cancelled by either side.
@@ -20,7 +25,6 @@ export type OrderStatus = (typeof ORDER_STATUSES)[number];
 
 export const STATUS_LABELS: Record<OrderStatus, string> = {
   PENDING_PAYMENT: "Awaiting advance payment",
-  PAYMENT_CLAIMED: "Payment submitted — verifying",
   CONFIRMED: "Confirmed — arranging your cab",
   ASSIGNED: "Cab assigned",
   COMPLETED: "Trip completed",
@@ -68,8 +72,8 @@ export type Order = {
   /** Exact rupee string requested over UPI, e.g. "1000.00" or "1000.37". */
   payableAmount: string;
 
-  paymentUtr?: string;
-  paymentClaimedAt?: string;
+  /** Reference you noted when you saw the advance land. Yours, not the customer's. */
+  paymentReference?: string;
   paymentVerifiedAt?: string;
 
   /** Present from day one even though you assign partners offline. */
