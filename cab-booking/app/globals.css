@@ -1,0 +1,90 @@
+@import "tailwindcss";
+
+/*
+  Ads are ~90% mobile traffic, so the type scale, tap targets and spacing here
+  are tuned for a thumb on a phone first and widened up from there.
+*/
+@theme {
+  --color-ink-50: #f8fafc;
+  --color-ink-100: #f1f5f9;
+  --color-ink-200: #e2e8f0;
+  --color-ink-300: #cbd5e1;
+  --color-ink-400: #94a3b8;
+  --color-ink-500: #64748b;
+  --color-ink-600: #475569;
+  --color-ink-700: #334155;
+  --color-ink-800: #1e293b;
+  --color-ink-900: #0f172a;
+
+  --color-brand-50: #eff6ff;
+  --color-brand-100: #dbeafe;
+  --color-brand-500: #2563eb;
+  --color-brand-600: #1d4ed8;
+  --color-brand-700: #1e40af;
+
+  --color-accent-50: #fffbeb;
+  --color-accent-100: #fef3c7;
+  --color-accent-300: #fcd34d;
+  --color-accent-500: #f59e0b;
+  --color-accent-600: #d97706;
+
+  --font-sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto,
+    "Helvetica Neue", Arial, sans-serif;
+}
+
+html {
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  background: var(--color-ink-50);
+  color: var(--color-ink-900);
+  font-family: var(--font-sans);
+}
+
+/* iOS zooms the page in when a focused input is under 16px. */
+input,
+select,
+textarea {
+  font-size: 16px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+.card {
+  @apply rounded-2xl border border-ink-200 bg-white shadow-sm;
+}
+
+.label {
+  @apply mb-1.5 block text-sm font-medium text-ink-700;
+}
+
+.input {
+  @apply w-full rounded-xl border border-ink-300 bg-white px-3.5 py-3 text-ink-900
+         outline-none transition placeholder:text-ink-400
+         focus:border-brand-500 focus:ring-2 focus:ring-brand-100;
+}
+
+.btn-primary {
+  @apply inline-flex w-full items-center justify-center gap-2 rounded-xl bg-brand-600
+         px-6 py-4 text-base font-semibold text-white shadow-sm transition
+         hover:bg-brand-700 focus-visible:ring-2 focus-visible:ring-brand-500
+         focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60;
+}
+
+.btn-secondary {
+  @apply inline-flex items-center justify-center gap-2 rounded-xl border border-ink-300
+         bg-white px-5 py-3 text-sm font-semibold text-ink-800 transition
+         hover:bg-ink-50 disabled:opacity-60;
+}
+
+.chip {
+  @apply rounded-full border border-ink-200 bg-white px-3 py-1 text-xs font-medium text-ink-600;
+}
