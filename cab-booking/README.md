@@ -18,8 +18,11 @@ Ad click  →  /  (calculator + every cab priced)
                       │                 status: PENDING_PAYMENT
                       │                 ← the lead is captured HERE, before payment
                       └─ dynamic UPI QR (amount + booking ID pre-filled)
-                            └─ customer enters UTR    → PAYMENT_CLAIMED
-                                  └─ you match it in your bank  → CONFIRMED
+                            └─ customer pays; nothing to type
+                                  └─ your bank's credit alert → webhook
+                                        → matched on amount → CONFIRMED
+                                  (fallback: customer enters UTR → PAYMENT_CLAIMED
+                                             → you verify in admin → CONFIRMED)
                                         └─ you fill in driver details → ASSIGNED
                                               └─ customer sees them on /booking/<id>
 ```
@@ -31,9 +34,11 @@ the QR screen is still a named lead with a phone number and a full trip spec,
 sitting in your admin panel under "Unpaid — call these back". Gating the record
 behind payment would throw most of them away.
 
-**A UTR is a claim, never a confirmation.** With no gateway there is no callback
-to trust, so `PAYMENT_CLAIMED` and `CONFIRMED` are separate states and only you
-can bridge them, after looking at your bank statement.
+**A customer-typed UTR is a claim, never a confirmation.** `PAYMENT_CLAIMED` and
+`CONFIRMED` are separate states, and only evidence from your own bank bridges
+them — either you reading your statement, or the bank-alert webhook doing it for
+you (step 8 below, which also removes the UTR box from the customer's screen).
+What is never allowed to confirm a booking is the customer's own word.
 
 **The fare is frozen onto the order at booking time.** Editing `config/fares.ts`
 changes what new customers are quoted and never rewrites what an existing
@@ -120,7 +125,65 @@ Push to GitHub, import the repo at [vercel.com](https://vercel.com), set the
   on GST for aggregator commission.
 - Do one real ₹1 test booking end to end, including the bank check.
 
-### 8. WhatsApp (later)
+### 8. Automatic payment verification — no UTR for the customer
+
+By default the customer types their UPI reference after paying. You can remove
+that step entirely.
+
+**Why it needs your bank, not the customer's browser.** A `upi://` link hands
+off to GPay or PhonePe, and the result goes back to the *Android app* that
+launched it. A web page receives no callback, so the customer's device can
+never tell the site they paid — not without a payment service provider. But the
+money lands in your account, and your bank alerts you within seconds. Feed that
+alert back into the site and the customer types nothing at all.
+
+Set `PAYMENT_AUTO_VERIFY=true`, `UPI_UNIQUE_PAISE=true`, and a long random
+`BANK_WEBHOOK_SECRET`. Then point one of these at
+`https://your-domain.com/api/payments/webhook`:
+
+**Option A — forward your bank SMS (works with any bank).** Install an
+SMS-forwarding app on a spare Android phone that keeps your bank's SIM, and
+configure it to POST messages from your bank's sender ID to the webhook URL with
+the header `Authorization: Bearer <BANK_WEBHOOK_SECRET>`. The phone has to stay
+on and connected.
+
+**Option B — forward your bank's credit-alert emails (no phone needed).** Turn
+on email alerts for credits in your bank's netbanking, send them to an address
+handled by an inbound-email service (Cloudflare Email Workers, or the inbound
+webhook of your email provider), and have that service POST the email body to
+the webhook. More reliable than Option A, since nothing depends on a phone
+staying alive.
+
+The endpoint accepts JSON `{"text": "..."}`, a form field, or a raw text body —
+whatever your forwarder sends. It parses the amount, the UPI reference and the
+payer name, and then:
+
+| Outcome | What happens |
+|---|---|
+| Exactly one open booking expects that amount | Auto-confirmed, customer's page flips within seconds |
+| The alert is a debit, an OTB, an OTP or a promo | Silently ignored |
+| The same alert arrives twice | Recognised and skipped |
+| Money arrived, no booking matches | **You are alerted** with the raw text — confirm by hand |
+| Two bookings expect the same amount | **You are alerted** with both IDs — nothing auto-confirmed |
+
+Two things make this safe, and neither should be relaxed:
+
+- **`UPI_UNIQUE_PAISE=true` is what makes matching unambiguous.** It gives each
+  booking its own paise (₹1000.03, ₹1000.38 …) so no two live bookings look
+  alike in a bank alert. Without it, two customers booking the same trip block
+  each other's auto-confirmation. The admin panel warns you if you switch
+  auto-verify on without it.
+- **`BANK_WEBHOOK_SECRET` is a password.** This endpoint can mark a booking
+  paid. Anyone who can post to it unauthenticated gets free cabs. Use
+  `openssl rand -base64 32`; the endpoint refuses every request while the secret
+  is unset or shorter than 16 characters.
+
+The manual reference box does not go away — it stays collapsed behind
+"Already paid but nothing happened?", and opens itself if confirmation hasn't
+arrived after about 75 seconds. SMS forwarding fails sometimes, and a customer
+with no way to tell you they paid is a phone call either way.
+
+### 9. WhatsApp (later)
 
 WhatsApp cannot send from a website without the Cloud API: a Meta Business
 account, a verified number, and pre-approved message templates — typically one
@@ -169,6 +232,11 @@ Current behaviour with the shipped defaults:
 
 ## Adding a payment gateway later
 
+Bank-alert auto-verification already gives you the important half of a gateway
+— hands-off confirmation — for free. A gateway adds what it cannot: cards and
+netbanking, a signed callback rather than a parsed SMS, and refunds you don't
+process by hand. Expect roughly 2% MDR for that.
+
 When you move to Razorpay or Cashfree, the only thing that changes is how an
 order reaches `CONFIRMED`. Replace the UTR form in
 `app/api/orders/[id]/payment/route.ts` with a signed webhook handler that sets
@@ -187,6 +255,7 @@ real address for the gateway's onboarding review. They already are.
 | `/` | Ad landing page: calculator, pricing, checkout |
 | `/booking/<id>` | Post-booking: UPI QR, UTR entry, status, driver details |
 | `/track` | Look up a booking with ID **and** the matching phone number |
+| `/api/payments/webhook` | Receives your bank credit alerts (secret required) |
 | `/admin` | Orders list, filtered by what needs doing |
 | `/admin/orders/<id>` | Verify payment, assign a cab, copy partner and customer messages |
 | `/terms`, `/refund-policy`, `/privacy`, `/contact` | Published policies |

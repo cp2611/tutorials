@@ -52,6 +52,16 @@ export default async function AdminPage({
         </p>
       )}
 
+      {process.env.PAYMENT_AUTO_VERIFY === "true" && process.env.UPI_UNIQUE_PAISE !== "true" && (
+        <p className="rounded-xl border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+          <strong>Auto-verify is on but unique paise is off.</strong> Two open bookings with the
+          same advance are indistinguishable in a bank alert, so neither gets confirmed
+          automatically and both land in your alerts instead. Set
+          <code className="mx-1 rounded bg-amber-100 px-1">UPI_UNIQUE_PAISE=true</code>
+          to give every booking its own amount.
+        </p>
+      )}
+
       <div className="grid gap-3 sm:grid-cols-3">
         {[
           ["Advance to verify", counts.toVerify, "PAYMENT_CLAIMED"],

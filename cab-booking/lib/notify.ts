@@ -276,6 +276,71 @@ export async function notifyAssignment(o: Order): Promise<NotifyResult[]> {
 }
 
 /**
+ * Fired when a bank alert matched a booking and confirmed it with no human
+ * involved. Informational for you; the customer's page updates on its own.
+ */
+export async function notifyPaymentAutoConfirmed(o: Order): Promise<NotifyResult[]> {
+  const heading = "\u2705 Advance auto-confirmed from your bank alert";
+  const jobs: Promise<NotifyResult>[] = [
+    sendTelegram(ownerTelegramText(o, heading)),
+    sendEmail(
+      BUSINESS.email,
+      `${heading} \u00b7 ${o.id} \u00b7 \u20b9${o.payableAmount}`,
+      ownerEmailHtml(o, heading),
+    ),
+  ];
+  if (o.customerEmail) {
+    jobs.push(
+      sendEmail(o.customerEmail, `Booking ${o.id} confirmed \u2014 ${BUSINESS.brandName}`, customerEmailHtml(o)),
+    );
+  }
+  return Promise.all(jobs);
+}
+
+/**
+ * Fired when money arrived that could not be placed against exactly one
+ * booking. This needs a person, so it is loud and carries the raw alert.
+ */
+export async function notifyUnmatchedCredit(
+  credit: { amount: string; reference?: string; payer?: string; raw: string },
+  candidateIds: string[],
+): Promise<NotifyResult[]> {
+  const ambiguous = candidateIds.length > 1;
+  const heading = ambiguous
+    ? "\u26a0\ufe0f Credit matches MORE THAN ONE booking \u2014 confirm by hand"
+    : "\u26a0\ufe0f Credit received with NO matching booking";
+
+  const lines = [
+    `<b>${escapeHtml(heading)}</b>`,
+    "",
+    `\ud83d\udcb0 <b>\u20b9${escapeHtml(credit.amount)}</b>`,
+    credit.reference ? `\ud83e\uddfe <code>${escapeHtml(credit.reference)}</code>` : "",
+    credit.payer ? `\ud83d\udc64 ${escapeHtml(credit.payer)}` : "",
+    ambiguous ? `\ud83d\udd0e Candidates: ${candidateIds.map(escapeHtml).join(", ")}` : "",
+    "",
+    `<i>${escapeHtml(credit.raw.slice(0, 400))}</i>`,
+    "",
+    `<a href="${BUSINESS.siteUrl}/admin?q=${encodeURIComponent(credit.amount)}">Find it in admin \u2192</a>`,
+  ].filter(Boolean);
+
+  const html = `
+    <div style="font-family:system-ui,Segoe UI,Arial,sans-serif;max-width:620px">
+      <h2 style="margin:0 0 12px">${escapeHtml(heading)}</h2>
+      <p style="margin:0 0 8px">Amount: <strong>\u20b9${escapeHtml(credit.amount)}</strong></p>
+      ${credit.reference ? `<p style="margin:0 0 8px">Reference: <strong>${escapeHtml(credit.reference)}</strong></p>` : ""}
+      ${credit.payer ? `<p style="margin:0 0 8px">From: <strong>${escapeHtml(credit.payer)}</strong></p>` : ""}
+      ${ambiguous ? `<p style="margin:0 0 8px">Candidate bookings: <strong>${candidateIds.map(escapeHtml).join(", ")}</strong></p>` : ""}
+      <pre style="background:#f1f5f9;padding:12px;border-radius:6px;white-space:pre-wrap;font-size:12px">${escapeHtml(credit.raw.slice(0, 800))}</pre>
+      <p><a href="${BUSINESS.siteUrl}/admin" style="background:#0f172a;color:#fff;padding:10px 18px;border-radius:6px;text-decoration:none">Open admin</a></p>
+    </div>`;
+
+  return Promise.all([
+    sendTelegram(lines.join("\n")),
+    sendEmail(BUSINESS.email, `${heading} \u00b7 \u20b9${credit.amount}`, html),
+  ]);
+}
+
+/**
  * Ready-to-send WhatsApp text for you to paste to the customer, and the wa.me
  * link that opens the chat with it pre-filled. Useful from day one, before the
  * Cloud API is approved — and as the fallback whenever a template send fails.

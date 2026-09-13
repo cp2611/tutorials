@@ -184,3 +184,48 @@ export async function recentOrdersByPhone(phone: string, withinMinutes: number):
     (o) => o.customerPhone === phone && new Date(o.createdAt).getTime() > cutoff,
   );
 }
+
+/**
+ * Orders still waiting on money, whose expected UPI amount matches a credit
+ * that just landed. Used to auto-confirm a booking from a bank alert.
+ *
+ * Matching on the exact rupee-and-paise string is what makes this reliable:
+ * with UPI_UNIQUE_PAISE on, every live booking has a distinct amount.
+ */
+export async function findOrdersAwaitingAmount(
+  payableAmount: string,
+  sinceDays: number,
+): Promise<Order[]> {
+  const cutoff = new Date(Date.now() - sinceDays * 86400_000).toISOString();
+  const open: OrderStatus[] = ["PENDING_PAYMENT", "PAYMENT_CLAIMED"];
+
+  if (usingPostgres) {
+    const sql = await getSql();
+    const rows = await sql<{ data: Order }[]>`
+      select data from orders
+      where data->>'payableAmount' = ${payableAmount}
+        and status = any(${open})
+        and created_at > ${cutoff}
+      order by created_at desc limit 20`;
+    return rows.map((r) => r.data);
+  }
+  const all = await readFileStore();
+  return all.filter(
+    (o) =>
+      o.payableAmount === payableAmount &&
+      open.includes(o.status) &&
+      o.createdAt > cutoff,
+  );
+}
+
+/** Guards against the same bank alert being delivered twice. */
+export async function findOrderByUtr(utr: string): Promise<Order | null> {
+  if (usingPostgres) {
+    const sql = await getSql();
+    const rows = await sql<{ data: Order }[]>`
+      select data from orders where data->>'paymentUtr' = ${utr} limit 1`;
+    return rows[0]?.data ?? null;
+  }
+  const all = await readFileStore();
+  return all.find((o) => o.paymentUtr === utr) ?? null;
+}

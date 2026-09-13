@@ -64,6 +64,7 @@ export default async function BookingPage({ params }: { params: Promise<{ id: st
           upiUri={upiUri}
           qrDataUrl={qrDataUrl}
           payableAmount={order.payableAmount}
+          autoVerify={process.env.PAYMENT_AUTO_VERIFY === "true"}
         />
       )}
 
