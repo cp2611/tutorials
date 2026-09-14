@@ -286,18 +286,24 @@ why they appear as exclusions on every quote and in the terms, per trip type.
 
 ### Service area and what "26 routes" actually means
 
-Pickups from **Mumbai, Navi Mumbai, Thane, Panvel, Kalyan and Vasai-Virar**.
-That list is the only real restriction on the site: a pickup outside it is
-refused, because you cannot service it.
+Pickups from **Mumbai and Thane**. That list is the only real restriction on
+the site: a pickup outside it is refused, because you cannot service it.
+
+Cities are toggled in `SERVICE_CITY_OPTIONS`, not deleted — Navi Mumbai,
+Panvel, Kalyan and Vasai-Virar are listed there with `enabled: false` and each
+is a one-word edit away from being live again when you have partner coverage
+for it. The dropdown, the quote API and the booking API all read the same
+derived list, so a disabled city is refused at every layer, not just hidden in
+the form.
 
 Destinations are **not** restricted. The 26 entries in `ROUTES` are
 pre-measured so those destinations quote instantly and exactly; anywhere else
 still books — the customer enters the approximate distance and the quote is
 flagged provisional until you confirm it. Mumbai to Hyderabad works today.
 
-Distances are measured from Mumbai. A Kalyan or Vasai pickup quotes off the
-same number and says so, rather than asking the customer to measure it
-themselves — a quote a few kilometres out beats a form that demands homework.
+Distances are measured from Mumbai. A Thane pickup quotes off the same number
+and says so, rather than asking the customer to measure it themselves — a quote
+a few kilometres out beats a form that demands homework.
 
 | | |
 |---|---|

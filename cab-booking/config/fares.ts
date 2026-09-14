@@ -382,22 +382,28 @@ export const FEATURED_ROUTES: { to: string; blurb: string }[] = [
 ];
 
 /**
- * Cities you will pick up FROM. A booking outside this list is refused.
+ * Cities you will pick up FROM. A booking from anywhere else is refused.
+ *
+ * Flip `enabled` to open or close a city — no other change needed. Keeping the
+ * disabled ones listed rather than deleting them means turning one back on is a
+ * one-word edit when you have the partner coverage for it.
  *
  * The measured distances in ROUTES are all from Mumbai. A pickup elsewhere in
  * the metropolitan region still quotes instantly off those numbers, but the
- * quote is flagged as approximate — Kalyan to Pune is genuinely shorter than
- * Mumbai to Pune, and Vasai to Pune is longer, so the honest thing is to say
- * so and confirm before pickup rather than quietly quote the wrong distance.
+ * quote is flagged as approximate and confirmed before pickup — Thane to Pune
+ * is genuinely shorter than Mumbai to Pune.
  */
-export const SERVICE_CITIES = [
-  "Mumbai",
-  "Navi Mumbai",
-  "Thane",
-  "Panvel",
-  "Kalyan",
-  "Vasai-Virar",
+export const SERVICE_CITY_OPTIONS: { name: string; enabled: boolean }[] = [
+  { name: "Mumbai", enabled: true },
+  { name: "Thane", enabled: true },
+  { name: "Navi Mumbai", enabled: false },
+  { name: "Panvel", enabled: false },
+  { name: "Kalyan", enabled: false },
+  { name: "Vasai-Virar", enabled: false },
 ];
+
+/** The live list. Everything in the app reads this, never the options above. */
+export const SERVICE_CITIES = SERVICE_CITY_OPTIONS.filter((c) => c.enabled).map((c) => c.name);
 
 /** Distances in ROUTES are measured from here. */
 export const ROUTE_ORIGIN = "Mumbai";
