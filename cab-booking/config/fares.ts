@@ -381,8 +381,26 @@ export const FEATURED_ROUTES: { to: string; blurb: string }[] = [
   { to: "Goa", blurb: "Long drive, 2 days" },
 ];
 
-/** Cities you will pick up FROM. A booking outside this list is refused. */
-export const SERVICE_CITIES = ["Mumbai", "Navi Mumbai", "Thane", "Panvel"];
+/**
+ * Cities you will pick up FROM. A booking outside this list is refused.
+ *
+ * The measured distances in ROUTES are all from Mumbai. A pickup elsewhere in
+ * the metropolitan region still quotes instantly off those numbers, but the
+ * quote is flagged as approximate — Kalyan to Pune is genuinely shorter than
+ * Mumbai to Pune, and Vasai to Pune is longer, so the honest thing is to say
+ * so and confirm before pickup rather than quietly quote the wrong distance.
+ */
+export const SERVICE_CITIES = [
+  "Mumbai",
+  "Navi Mumbai",
+  "Thane",
+  "Panvel",
+  "Kalyan",
+  "Vasai-Virar",
+];
+
+/** Distances in ROUTES are measured from here. */
+export const ROUTE_ORIGIN = "Mumbai";
 
 /** ------------------------------------------------------- BOOKING GUARDRAILS
  *  Stops someone booking a 3 AM SUV, 600 km away, 20 minutes from now —

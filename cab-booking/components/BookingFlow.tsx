@@ -54,6 +54,9 @@ export function BookingFlow() {
   const [customerNotes, setCustomerNotes] = useState("");
   const [acceptTerms, setAcceptTerms] = useState(false);
   const [honeypot, setHoneypot] = useState("");
+  // Stamped once when the page mounts. A human takes seconds to get here; a
+  // script posts instantly, and the server refuses anything that fast.
+  const formLoadedAt = useRef(Date.now());
   const [submitting, setSubmitting] = useState(false);
 
   const resultsRef = useRef<HTMLDivElement>(null);
@@ -173,6 +176,7 @@ export function BookingFlow() {
           customerNotes: customerNotes || undefined,
           acceptTerms,
           website: honeypot,
+          formLoadedAt: formLoadedAt.current,
           utm: loadUtm(),
         }),
       });

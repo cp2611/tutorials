@@ -284,6 +284,61 @@ Driver allowance ₹300–600 per day by model, round trips only. Tolls ₹500�
 per route and state permit ₹200–500 per state are charged at actual — which is
 why they appear as exclusions on every quote and in the terms, per trip type.
 
+### Service area and what "26 routes" actually means
+
+Pickups from **Mumbai, Navi Mumbai, Thane, Panvel, Kalyan and Vasai-Virar**.
+That list is the only real restriction on the site: a pickup outside it is
+refused, because you cannot service it.
+
+Destinations are **not** restricted. The 26 entries in `ROUTES` are
+pre-measured so those destinations quote instantly and exactly; anywhere else
+still books — the customer enters the approximate distance and the quote is
+flagged provisional until you confirm it. Mumbai to Hyderabad works today.
+
+Distances are measured from Mumbai. A Kalyan or Vasai pickup quotes off the
+same number and says so, rather than asking the customer to measure it
+themselves — a quote a few kilometres out beats a form that demands homework.
+
+| | |
+|---|---|
+| **Day trip** | Karjat 65 · Khandala 80 · **Lonavala 83** · Matheran 85 · **Alibaug 100** · Igatpuri 120 |
+| **Overnight** | **Pune 150** · Nashik 165 · Murud 165 · Silvassa 165 · Diveagar 170 · Daman 175 · Trimbakeshwar 180 · Lavasa 200 · Bhimashankar 215 · **Shirdi 240** · Panchgani 245 · **Mahabaleshwar 250** |
+| **Weekend** | Surat 285 · Ratnagiri 330 · Aurangabad 335 · Ganpatipule 355 · Kolhapur 385 |
+| **Long haul** | Tarkarli 520 · Ahmedabad 525 · **Goa 590** |
+
+**Bold** routes are the six in `FEATURED_ROUTES` — they get a one-tap tile on
+the landing page and a hand-set flat price instead of the per-km formula. The
+other twenty are priced by formula and still bookable; they simply do not have
+a tile.
+
+### Abuse protection, without an OTP
+
+No OTP on booking: every extra step costs real bookings from a paid ad click,
+and the goal is to keep junk out of your inbox and load off the server, not to
+prove identity. Six layers instead, all invisible to a real customer:
+
+| Layer | What it stops |
+|---|---|
+| 5 bookings per IP per hour | Someone holding down submit to bury your real leads |
+| 5 bookings per phone per day | The same, by someone rotating their IP |
+| 120 quotes per IP per 10 min | Scraping your whole fare table |
+| Minimum 4-second form fill | Scripts, which post instantly |
+| Hidden honeypot field | Bots that fill every input they find |
+| Fake-number and link-spam checks | 9999999999, sequential digits, URLs in the notes box |
+
+Counters live in Postgres, not memory, because Vercel runs many short-lived
+instances — an in-memory counter resets on every cold start, handing an
+attacker a fresh allowance each time. If the database is unreachable the
+limiter **fails open**: a hiccup must never stop real customers booking.
+
+Rejections are deliberately vague ("we couldn't accept that booking, please
+call us") so a script learns nothing about which rule it tripped, and a real
+person who gets caught still has a way to reach you.
+
+Vercel also sits in front of all of this with its own platform-level DDoS
+protection, so this layer only has to handle the nuisance traffic that gets
+through.
+
 ### Three places the market will bite you
 
 **Airport transfers are close to unwinnable on price.** The MIAL prepaid booth

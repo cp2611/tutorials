@@ -10,6 +10,7 @@ import {
   RENTAL_PACKAGES,
   ROUTES,
   TOUR_PACKAGES,
+  ROUTE_ORIGIN,
   SERVICE_CITIES,
   type CabTypeId,
   type PerCab,
@@ -52,14 +53,30 @@ export type QuoteInput = {
 const money = (n: number) => Math.round(n);
 const roundTo10 = (n: number) => Math.round(n / 10) * 10;
 
+/**
+ * Finds the measured route for a trip.
+ *
+ * Routes are all measured from ROUTE_ORIGIN, but pickups are accepted from
+ * every city in SERVICE_CITIES. So an exact pair match is tried first, and
+ * failing that the destination alone is matched against the origin-anchored
+ * table — otherwise a Thane or Kalyan customer would be asked to type in the
+ * distance to Pune themselves, which is a worse experience than a quote that
+ * is a few kilometres out and says so.
+ */
 export function lookupRoute(from?: string, to?: string): (typeof ROUTES)[number] | undefined {
-  if (!from || !to) return undefined;
-  const a = from.trim().toLowerCase();
-  const b = to.trim().toLowerCase();
-  return ROUTES.find(
+  if (!to) return undefined;
+  const dest = to.trim().toLowerCase();
+  const origin = from?.trim().toLowerCase();
+
+  const exact = ROUTES.find(
     (r) =>
-      (r.from.toLowerCase() === a && r.to.toLowerCase() === b) ||
-      (r.from.toLowerCase() === b && r.to.toLowerCase() === a),
+      (r.from.toLowerCase() === origin && r.to.toLowerCase() === dest) ||
+      (r.from.toLowerCase() === dest && r.to.toLowerCase() === origin),
+  );
+  if (exact) return exact;
+
+  return ROUTES.find(
+    (r) => r.from.toLowerCase() === ROUTE_ORIGIN.toLowerCase() && r.to.toLowerCase() === dest,
   );
 }
 
@@ -151,6 +168,17 @@ export function buildQuote(input: QuoteInput): Quote {
         provisional = true;
         notes.push(
           "Distance was entered by you, so this is an estimate. We confirm the exact fare before you pay anything more.",
+        );
+      } else if (
+        input.pickupCity &&
+        input.pickupCity.trim().toLowerCase() !== ROUTE_ORIGIN.toLowerCase()
+      ) {
+        // Our measured routes all start in Mumbai. Quoting a Kalyan or Vasai
+        // pickup off that number is close enough to be useful and wrong enough
+        // to say out loud.
+        provisional = true;
+        notes.push(
+          `This distance is measured from ${ROUTE_ORIGIN}. Your pickup is in ${input.pickupCity.trim()}, so the final fare may differ a little — we confirm it before pickup.`,
         );
       }
       days = isRound ? tripDays(input.pickupAt, input.returnAt) : 1;

@@ -4,6 +4,7 @@ import { buildQuote, QuoteError, validateSchedule } from "@/lib/pricing";
 import { quoteSchema } from "@/lib/validation";
 import type { CabTypeId, TripType } from "@/config/fares";
 import type { Quote } from "@/lib/pricing";
+import { clientIp, rateLimit } from "@/lib/ratelimit";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -13,6 +14,16 @@ export const dynamic = "force-dynamic";
  * so the customer sees a real comparison table rather than picking a car blind.
  */
 export async function POST(req: Request) {
+  // Generous enough that nobody comparing cars ever notices, tight enough that
+  // scraping the whole fare table takes a very long time.
+  const limit = await rateLimit("quote:ip", clientIp(req), 120, 10 * 60);
+  if (!limit.ok) {
+    return NextResponse.json(
+      { error: "Too many price checks. Please wait a moment." },
+      { status: 429, headers: { "retry-after": String(limit.retryAfterSeconds) } },
+    );
+  }
+
   let body: unknown;
   try {
     body = await req.json();

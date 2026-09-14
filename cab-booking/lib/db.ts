@@ -49,6 +49,16 @@ async function getSql(): Promise<Sql> {
       await sql`create index if not exists orders_created_at_idx on orders (created_at desc)`;
       await sql`create index if not exists orders_status_idx on orders (status)`;
       await sql`create index if not exists orders_phone_idx on orders (customer_phone)`;
+      // Shared across instances so a serverless cold start cannot reset someone's
+      // allowance. Rows are tiny and old windows are swept on write.
+      await sql`
+        create table if not exists rate_limits (
+          key          text not null,
+          window_start timestamptz not null,
+          hits         integer not null default 0,
+          primary key (key, window_start)
+        )
+      `;
       return sql;
     })();
   }
@@ -183,4 +193,24 @@ export async function recentOrdersByPhone(phone: string, withinMinutes: number):
   return all.filter(
     (o) => o.customerPhone === phone && new Date(o.createdAt).getTime() > cutoff,
   );
+}
+
+/**
+ * Connection for the rate limiter. Separate export so lib/ratelimit.ts does not
+ * import the order helpers, and so the table is created by the same bootstrap.
+ */
+export async function getSqlForRateLimit(): Promise<Sql> {
+  return getSql();
+}
+
+/** Housekeeping for the rate-limit table. Safe to call rarely; nothing depends on it. */
+export async function sweepRateLimits(olderThanHours = 24): Promise<void> {
+  if (!usingPostgres) return;
+  try {
+    const sql = await getSql();
+    const cutoff = new Date(Date.now() - olderThanHours * 3600_000).toISOString();
+    await sql`delete from rate_limits where window_start < ${cutoff}`;
+  } catch (e) {
+    console.error("[ratelimit] sweep failed", e);
+  }
 }

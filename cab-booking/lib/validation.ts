@@ -42,6 +42,8 @@ export const createOrderSchema = quoteSchema.extend({
   utm: utmSchema,
   /** Hidden field that only bots fill in. Must stay empty. */
   website: z.string().max(0, { error: "Submission rejected." }).optional(),
+  /** When the form was rendered, used to spot instant machine submissions. */
+  formLoadedAt: z.coerce.number().int().positive().optional(),
 });
 
 /** Optional note you add when marking an advance received. Never customer input. */
