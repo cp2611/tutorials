@@ -181,13 +181,63 @@ Current behaviour with the shipped defaults:
 
 | Trip | Fare | Advance |
 |---|---|---|
-| Local drop, 5 km | ₹400 | ₹200 (50%) |
-| Airport transfer | ₹1,200 | ₹350 (29%) |
-| Delhi → Jaipur one-way | ₹3,940 | ₹1,000 (25%) |
-| Delhi → Manali, 5 days, SUV | ₹23,250 | ₹2,300 (10%) |
-| Delhi → Varanasi, 5 days, Tempo | ₹45,640 | ₹4,550 (10%) |
+| Local drop, 5 km | ₹450 | ₹200 (44%) |
+| Airport ⇄ South Mumbai | ₹1,100 | ₹300 (27%) |
+| Mumbai Darshan, full day | ₹3,000 | ₹750 (25%) |
+| Mumbai → Pune, one-way drop | ₹2,800 | ₹800 (29%) |
+| Mumbai → Goa, 5 days, Crysta | ₹27,000 | ₹2,700 (10%) |
 
 ---
+
+## Mumbai setup, and the one number to check first
+
+The site ships configured for Mumbai: pickups from Mumbai, Navi Mumbai, Thane
+and Panvel; 26 measured outstation routes from Lonavala and Alibaug out to Goa
+and Ahmedabad; six CSMIA airport zones; and three Mumbai Darshan packages.
+
+**Sightseeing is its own trip type, not a relabelled hourly rental.** Mumbai
+Darshan is a product people search for by name, so it has its own price and a
+published stop list — Gateway of India, Marine Drive, Siddhivinayak, Haji Ali,
+Hanging Gardens, Dhobi Ghat, the Sea Link, Juhu. The itinerary is what makes a
+customer pick you over a site that just says "8 hours / 80 km". Entry tickets
+and ferry charges are excluded, on the pricing page and in the terms.
+
+### One-way drops are the risky ones
+
+A round trip is easy to price: the car is with the customer the whole time. A
+one-way drop is not, because the car still has to come back. Mumbai → Goa is
+590 km charged and 1,180 km driven.
+
+Two settings handle this, and you should set both from what your partner
+actually tells you:
+
+- `OUTSTATION.oneWayReturnFactor` (default `1.6`) multiplies the distance on
+  any route without a flat rate. Push it toward `2` if your partner bills you
+  the full return leg.
+- `oneWayFlat` on a route in `ROUTES` overrides the formula completely. Use it
+  on corridors like Mumbai–Pune where return loads are reliable and your
+  partner quotes a fixed drop rate — the formula cannot know that, and without
+  the override you would price as if the car returns empty and lose the
+  booking to anyone quoting the real market rate.
+
+**Before advertising, ask each partner one question per route: "what do you
+charge me for this drop?"** Then check it against the break-even rate implied
+by the quote. With the shipped placeholders, on a sedan:
+
+| Route | You quote | km driven | Works if your partner charges |
+|---|---|---|---|
+| Mumbai → Pune | ₹2,800 | 300 | ≤ ₹9.33/km, allowance included |
+| Mumbai → Lonavala | ₹2,100 | 166 | ≤ ₹12.65/km, allowance included |
+| Mumbai → Alibaug | ₹2,300 | 200 | ≤ ₹11.50/km, allowance included |
+| Mumbai → Shirdi | ₹5,290 | 480 | ≤ ₹10.40/km + ₹300 allowance |
+| Mumbai → Goa | ₹12,570 | 1,180 | ≤ ₹10.40/km + ₹300 allowance |
+
+Pune is the tight one, which is expected — that corridor is competitive and
+only works on a flat rate with a return load. If your partner won't do it at
+that number, raise `oneWayFlat` for Pune rather than dropping the route.
+
+Road distances in `ROUTES` are approximate. Check the ones you actually sell:
+at ₹13/km a 20 km error moves every quote by ₹260.
 
 ## Adding a payment gateway later
 

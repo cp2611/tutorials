@@ -2,13 +2,14 @@ import {
   ADVANCE,
   AIRPORT_ZONES,
   CAB_TYPES,
-  EXCLUSIONS,
+  EXCLUSIONS_BY_TRIP,
   LEAD_TIME_HOURS,
   LOCAL,
   MAX_ADVANCE_BOOKING_DAYS,
   OUTSTATION,
   RENTAL_PACKAGES,
   ROUTES,
+  TOUR_PACKAGES,
   SERVICE_CITIES,
   type CabTypeId,
   type TripType,
@@ -52,16 +53,19 @@ export type QuoteInput = {
 const money = (n: number) => Math.round(n);
 const roundTo10 = (n: number) => Math.round(n / 10) * 10;
 
-export function lookupRouteKm(from?: string, to?: string): number | undefined {
+export function lookupRoute(from?: string, to?: string): (typeof ROUTES)[number] | undefined {
   if (!from || !to) return undefined;
   const a = from.trim().toLowerCase();
   const b = to.trim().toLowerCase();
-  const hit = ROUTES.find(
+  return ROUTES.find(
     (r) =>
       (r.from.toLowerCase() === a && r.to.toLowerCase() === b) ||
       (r.from.toLowerCase() === b && r.to.toLowerCase() === a),
   );
-  return hit?.km;
+}
+
+export function lookupRouteKm(from?: string, to?: string): number | undefined {
+  return lookupRoute(from, to)?.km;
 }
 
 /**
@@ -117,12 +121,12 @@ export function buildQuote(input: QuoteInput): Quote {
     case "outstation_oneway":
     case "outstation_round": {
       const isRound = input.tripType === "outstation_round";
-      const measured = lookupRouteKm(input.pickupCity, input.dropCity);
-      distanceKm = measured ?? input.distanceKm;
+      const route = lookupRoute(input.pickupCity, input.dropCity);
+      distanceKm = route?.km ?? input.distanceKm;
       if (!distanceKm || distanceKm <= 0) {
         throw new QuoteError("Enter the approximate one-way distance in km.");
       }
-      if (!measured) {
+      if (!route) {
         provisional = true;
         notes.push(
           "Distance was entered by you, so this is an estimate. We confirm the exact fare before you pay anything more.",
@@ -130,19 +134,31 @@ export function buildQuote(input: QuoteInput): Quote {
       }
       days = isRound ? tripDays(input.pickupAt, input.returnAt) : 1;
 
-      const rawKm = isRound ? distanceKm * 2 : distanceKm;
+      // A flat drop rate, where we have one, beats any per-km formula: it is the
+      // price the partner actually quotes on a corridor with return loads.
+      if (!isRound && route?.oneWayFlat) {
+        lines.push({
+          label: `${route.from} → ${route.to} one-way drop`,
+          detail: `Flat fare for the ${route.km} km drop, driver allowance included.`,
+          amount: money(route.oneWayFlat[cab.id]),
+        });
+        break;
+      }
+
+      const rawKm = isRound
+        ? distanceKm * 2
+        : Math.round(distanceKm * OUTSTATION.oneWayReturnFactor);
       const minKm = isRound ? OUTSTATION.minKmPerDay * days : OUTSTATION.minKmOneWay;
       chargeableKm = Math.max(rawKm, minKm);
 
       const rate = OUTSTATION.perKm[cab.id];
       lines.push({
         label: `Fare (${chargeableKm} km × ₹${rate}/km)`,
-        detail:
-          chargeableKm > rawKm
-            ? isRound
-              ? `Route is ${rawKm} km, but a round trip bills a minimum of ${OUTSTATION.minKmPerDay} km per day (${days} day${days > 1 ? "s" : ""}).`
-              : `Route is ${rawKm} km, but one-way trips bill a minimum of ${OUTSTATION.minKmOneWay} km to cover the driver's return.`
-            : `${isRound ? `${distanceKm} km each way` : "One-way"}`,
+        detail: isRound
+          ? chargeableKm > rawKm
+            ? `Route is ${rawKm} km, but a round trip bills a minimum of ${OUTSTATION.minKmPerDay} km per day (${days} day${days > 1 ? "s" : ""}).`
+            : `${distanceKm} km each way.`
+          : `${distanceKm} km one way. A drop bills for the driver's return leg as well.`,
         amount: money(chargeableKm * rate),
       });
 
@@ -152,6 +168,35 @@ export function buildQuote(input: QuoteInput): Quote {
         detail: "Driver's food and stay, as per standard outstation practice.",
         amount: money(allowance),
       });
+      break;
+    }
+
+    case "tour": {
+      const pkg = TOUR_PACKAGES.find((t) => t.id === input.packageId);
+      if (!pkg) throw new QuoteError("Choose a sightseeing package.");
+      lines.push({
+        label: pkg.label,
+        detail: `${pkg.hours} hours / ${pkg.km} km included, car and driver at your disposal.`,
+        amount: money(pkg.price[cab.id]),
+      });
+      const th = Math.max(0, Math.floor(input.extraHours ?? 0));
+      const tk = Math.max(0, Math.floor(input.extraKm ?? 0));
+      if (th > 0) {
+        lines.push({
+          label: `Extra hours (${th} × ₹${pkg.extraPerHour[cab.id]})`,
+          amount: money(th * pkg.extraPerHour[cab.id]),
+        });
+      }
+      if (tk > 0) {
+        lines.push({
+          label: `Extra km (${tk} × ₹${pkg.extraPerKm[cab.id]})`,
+          amount: money(tk * pkg.extraPerKm[cab.id]),
+        });
+      }
+      notes.push(`Stops: ${pkg.highlights.join(" · ")}.`);
+      notes.push(
+        `Beyond ${pkg.hours} hours or ${pkg.km} km you pay ₹${pkg.extraPerHour[cab.id]}/hour and ₹${pkg.extraPerKm[cab.id]}/km, settled with the driver.`,
+      );
       break;
     }
 
@@ -218,6 +263,15 @@ export function buildQuote(input: QuoteInput): Quote {
       notes.push("Fare is based on the distance you entered and is confirmed before pickup.");
       break;
     }
+
+    default: {
+      // Adding a trip type to config/fares.ts without pricing it here used to
+      // fall straight through this switch and quote the customer ₹0. This makes
+      // TypeScript reject the build instead, and throws if one ever slips past
+      // at runtime.
+      const unpriced: never = input.tripType;
+      throw new QuoteError(`No fare rules for trip type "${String(unpriced)}".`);
+    }
   }
 
   // Night charge applies to every trip type when pickup falls in the night window.
@@ -244,7 +298,7 @@ export function buildQuote(input: QuoteInput): Quote {
     total,
     advance,
     balance: total - advance,
-    exclusions: [...EXCLUSIONS],
+    exclusions: [...EXCLUSIONS_BY_TRIP[input.tripType]],
     distanceKm,
     chargeableKm,
     days,

@@ -37,7 +37,8 @@ export default function ContactPage() {
 
       <h2>Where we operate</h2>
       <p>
-        Pickups from {SERVICE_CITIES.join(", ")}, with drops across North India. Travelling from
+        Pickups from {SERVICE_CITIES.join(", ")}, with drops across Maharashtra, Goa and Gujarat.
+        Travelling from
         somewhere else? Call us — we can often arrange it.
       </p>
 

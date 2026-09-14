@@ -6,9 +6,11 @@ import {
   AIRPORT_ZONES,
   CAB_TYPES,
   LEAD_TIME_HOURS,
+  FEATURED_ROUTES,
   RENTAL_PACKAGES,
   ROUTES,
   SERVICE_CITIES,
+  TOUR_PACKAGES,
   TRIP_TYPES,
   type CabTypeId,
   type TripType,
@@ -36,6 +38,7 @@ export function BookingFlow() {
   const [returnLocal, setReturnLocal] = useState("");
   const [zoneId, setZoneId] = useState(AIRPORT_ZONES[0]?.id ?? "");
   const [packageId, setPackageId] = useState(RENTAL_PACKAGES[1]?.id ?? RENTAL_PACKAGES[0]?.id ?? "");
+  const [tourId, setTourId] = useState(TOUR_PACKAGES[0]?.id ?? "");
 
   const [quotes, setQuotes] = useState<QuoteRow[]>([]);
   const [selectedCab, setSelectedCab] = useState<CabTypeId | null>(null);
@@ -56,6 +59,7 @@ export function BookingFlow() {
   const resultsRef = useRef<HTMLDivElement>(null);
   const isOutstation = tripType === "outstation_oneway" || tripType === "outstation_round";
   const isRound = tripType === "outstation_round";
+  const selectedTour = TOUR_PACKAGES.find((t) => t.id === tourId);
 
   const knownRoute = useMemo(() => {
     if (!isOutstation || !dropCity) return undefined;
@@ -82,11 +86,12 @@ export function BookingFlow() {
       pickupAt: istLocalToIso(pickupLocal),
       returnAt: isRound ? istLocalToIso(returnLocal) : undefined,
       zoneId: tripType === "airport" ? zoneId : undefined,
-      packageId: tripType === "rental" ? packageId : undefined,
+      packageId:
+        tripType === "rental" ? packageId : tripType === "tour" ? tourId : undefined,
     }),
     [
       tripType, pickupCity, dropCity, isOutstation, needsManualDistance, distanceKm,
-      knownRoute, pickupLocal, isRound, returnLocal, zoneId, packageId,
+      knownRoute, pickupLocal, isRound, returnLocal, zoneId, packageId, tourId,
     ],
   );
 
@@ -188,6 +193,40 @@ export function BookingFlow() {
     <div className="grid gap-5">
       {/* ---------------------------------------------------------- Step 1 */}
       <section className="card p-4 sm:p-6">
+        {/* One tap from an ad click to a priced route. These are the trips the
+            campaigns point at, so they should not need any typing at all. */}
+        <div className="mb-4">
+          <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-ink-500">
+            Popular from Mumbai
+          </p>
+          <div className="flex flex-wrap gap-2">
+            {FEATURED_ROUTES.map((r) => {
+              const active = isOutstation && dropCity.trim().toLowerCase() === r.to.toLowerCase();
+              return (
+                <button
+                  key={r.to}
+                  type="button"
+                  onClick={() => {
+                    setTripType("outstation_oneway");
+                    setDropCity(r.to);
+                    setStep("trip");
+                    setQuotes([]);
+                    setError(null);
+                  }}
+                  className={`rounded-xl border px-3 py-2 text-left transition ${
+                    active
+                      ? "border-brand-500 bg-brand-50"
+                      : "border-ink-200 bg-white hover:border-ink-300"
+                  }`}
+                >
+                  <span className="block text-sm font-semibold text-ink-900">Mumbai → {r.to}</span>
+                  <span className="block text-xs text-ink-500">{r.blurb}</span>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
         <div className="mb-4 flex flex-wrap gap-2" role="tablist" aria-label="Trip type">
           {TRIP_TYPES.map((t) => (
             <button
@@ -212,7 +251,7 @@ export function BookingFlow() {
         </div>
 
         <div className="grid gap-4 sm:grid-cols-2">
-          {(isOutstation || tripType === "rental" || tripType === "local") && (
+          {(isOutstation || tripType === "rental" || tripType === "local" || tripType === "tour") && (
             <div>
               <label className="label" htmlFor="pickupCity">Pickup city</label>
               <select
@@ -259,6 +298,36 @@ export function BookingFlow() {
                   <option key={z.id} value={z.id}>{z.label}</option>
                 ))}
               </select>
+            </div>
+          )}
+
+          {tripType === "tour" && (
+            <div className="sm:col-span-2">
+              <label className="label" htmlFor="tourId">Sightseeing package</label>
+              <select id="tourId" className="input" value={tourId} onChange={(e) => setTourId(e.target.value)}>
+                {TOUR_PACKAGES.map((t) => (
+                  <option key={t.id} value={t.id}>
+                    {t.label} — {t.hours} hrs / {t.km} km
+                  </option>
+                ))}
+              </select>
+              {selectedTour && (
+                <div className="mt-3 rounded-xl bg-ink-50 p-3.5">
+                  <p className="text-xs font-semibold uppercase tracking-wide text-ink-500">
+                    Where you&apos;ll go
+                  </p>
+                  <ul className="mt-2 flex flex-wrap gap-1.5">
+                    {selectedTour.highlights.map((h) => (
+                      <li key={h} className="rounded-full bg-white px-2.5 py-1 text-xs text-ink-700 ring-1 ring-ink-200">
+                        {h}
+                      </li>
+                    ))}
+                  </ul>
+                  <p className="mt-2.5 text-xs text-ink-500">
+                    Entry tickets and ferry charges are not included.
+                  </p>
+                </div>
+              )}
             </div>
           )}
 
@@ -427,7 +496,7 @@ export function BookingFlow() {
                 value={pickupAddress} onChange={(e) => setPickupAddress(e.target.value)} />
             </div>
 
-            {tripType !== "rental" && (
+            {tripType !== "rental" && tripType !== "tour" && (
               <div className="sm:col-span-2">
                 <label className="label" htmlFor="dropAddress">Drop address</label>
                 <input id="dropAddress" className="input" placeholder="Where are we dropping you?"

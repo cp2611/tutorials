@@ -58,6 +58,12 @@ export default function TermsPage() {
           Where a fare was quoted on a distance you supplied, we confirm the exact fare with you before
           the trip. You may cancel for a full refund if the corrected fare does not suit you.
         </li>
+        <li>
+          Sightseeing packages include the car, the driver and the hours and kilometres stated.{" "}
+          <strong>Monument entry tickets, ferry charges and guide fees are not included</strong> and
+          are paid by you at each stop. Stops may be reordered or skipped on the day for traffic,
+          closures or timings.
+        </li>
       </ul>
 
       <h2>Payment</h2>

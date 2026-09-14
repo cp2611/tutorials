@@ -8,7 +8,7 @@
 export const BUSINESS = {
   /** Shown in the header, emails, and inside the UPI payment request. */
   brandName: "RideLink Cabs",
-  tagline: "Outstation · Airport · Local — confirmed in 2 hours",
+  tagline: "Mumbai to Pune, Goa, Alibaug & Mumbai Darshan — confirmed in 2 hours",
 
   /** Customers see and call this. Use the number that is on WhatsApp. */
   phone: "+919000000000",
@@ -17,7 +17,7 @@ export const BUSINESS = {
   email: "bookings@example.com",
 
   /** Required on your Contact page before any payment gateway will approve you. */
-  address: "Shop 1, Example Road, New Delhi, Delhi 110001, India",
+  address: "Shop 1, Example Road, Andheri East, Mumbai, Maharashtra 400069, India",
   legalEntityName: "Example Travels",
 
   /** Public site URL, no trailing slash. Used in emails and QR metadata. */

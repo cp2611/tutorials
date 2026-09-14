@@ -15,7 +15,7 @@ export default function HomePage() {
     <div className="grid gap-6">
       <section className="text-center">
         <h1 className="text-balance text-3xl font-extrabold leading-tight tracking-tight text-ink-900 sm:text-4xl">
-          Book a cab in 60 seconds
+          Mumbai cabs, booked in 60 seconds
         </h1>
         <p className="mx-auto mt-2 max-w-xl text-balance text-ink-600">
           {BUSINESS.tagline}. See the full fare before you book — pay a small advance,
