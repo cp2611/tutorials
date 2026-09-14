@@ -25,6 +25,20 @@ export const TRIP_TYPES: { id: TripType; label: string; blurb: string }[] = [
 
 export type CabTypeId = "hatchback" | "sedan" | "suv" | "crysta" | "tempo";
 
+/**
+ * A price table with one entry per cab type — the shape almost every rate in
+ * this file takes, because a Dzire and a Tempo Traveller never cost the same.
+ *
+ * Written with `satisfies` rather than `as`. An `as` assertion would silently
+ * accept a table with a cab type missing, and the fare for that cab would come
+ * out as NaN on the live site. `satisfies` makes TypeScript refuse the build
+ * instead, so adding a sixth cab type below forces you to price it everywhere.
+ */
+export type PerCab = Record<CabTypeId, number>;
+
+/** Same guarantee, one entry per trip type. */
+export type PerTrip = Record<TripType, number>;
+
 export const CAB_TYPES: {
   id: CabTypeId;
   name: string;
@@ -45,15 +59,15 @@ export const CAB_TYPES: {
  *  that covers only 90 km still bills the 250 km minimum for that day.
  */
 export const OUTSTATION = {
-  perKm: { hatchback: 11, sedan: 13, suv: 17, crysta: 20, tempo: 26 } as Record<CabTypeId, number>,
+  perKm: { hatchback: 11, sedan: 13, suv: 17, crysta: 20, tempo: 26 } satisfies PerCab,
   /** Driver bata, per calendar day of the trip. */
-  driverAllowancePerDay: { hatchback: 300, sedan: 300, suv: 400, crysta: 400, tempo: 600 } as Record<CabTypeId, number>,
+  driverAllowancePerDay: { hatchback: 300, sedan: 300, suv: 400, crysta: 400, tempo: 600 } satisfies PerCab,
   /** One-way trips bill at least this many km (covers the driver's return leg). */
   minKmOneWay: 130,
   /** Round trips bill at least this many km per day. */
   minKmPerDay: 250,
   /** Added once if pickup is between nightChargeFrom and nightChargeTo. */
-  nightCharge: { hatchback: 300, sedan: 300, suv: 400, crysta: 400, tempo: 500 } as Record<CabTypeId, number>,
+  nightCharge: { hatchback: 300, sedan: 300, suv: 400, crysta: 400, tempo: 500 } satisfies PerCab,
   nightChargeFromHour: 22, // 10 PM
   nightChargeToHour: 6, //  6 AM
 };
@@ -64,7 +78,7 @@ export const OUTSTATION = {
 export const AIRPORT_ZONES: {
   id: string;
   label: string;
-  price: Record<CabTypeId, number>;
+  price: PerCab;
 }[] = [
   {
     id: "igi_central_delhi",
@@ -96,9 +110,9 @@ export const RENTAL_PACKAGES: {
   label: string;
   hours: number;
   km: number;
-  price: Record<CabTypeId, number>;
-  extraPerHour: Record<CabTypeId, number>;
-  extraPerKm: Record<CabTypeId, number>;
+  price: PerCab;
+  extraPerHour: PerCab;
+  extraPerKm: PerCab;
 }[] = [
   {
     id: "4h40km",
@@ -133,8 +147,8 @@ export const RENTAL_PACKAGES: {
  *  Per-km with a minimum fare, so a 2 km hop is never quoted at ₹26.
  */
 export const LOCAL = {
-  perKm: { hatchback: 16, sedan: 19, suv: 24, crysta: 28, tempo: 36 } as Record<CabTypeId, number>,
-  minFare: { hatchback: 350, sedan: 400, suv: 550, crysta: 650, tempo: 900 } as Record<CabTypeId, number>,
+  perKm: { hatchback: 16, sedan: 19, suv: 24, crysta: 28, tempo: 36 } satisfies PerCab,
+  minFare: { hatchback: 350, sedan: 400, suv: 550, crysta: 650, tempo: 900 } satisfies PerCab,
 };
 
 /** --------------------------------------------------------- OUTSTATION ROUTES
@@ -168,7 +182,7 @@ export const SERVICE_CITIES = ["Delhi", "Gurgaon", "Noida", "Ghaziabad", "Farida
  *  Stops someone booking a 3 AM SUV, 600 km away, 20 minutes from now —
  *  a trip you take ₹500 for and then cannot deliver.
  */
-export const LEAD_TIME_HOURS: Record<TripType, number> = {
+export const LEAD_TIME_HOURS: PerTrip = {
   outstation_oneway: 6,
   outstation_round: 8,
   airport: 3,
@@ -194,7 +208,7 @@ export const ADVANCE = {
     airport: 500,
     rental: 500,
     local: 300,
-  } as Record<TripType, number>,
+  } satisfies PerTrip,
   /**
    * On a big trip a flat advance stops covering your commission — a ₹1,500
    * advance on a ₹23,000 Manali run leaves everything else to be collected by
