@@ -145,29 +145,34 @@ export function buildQuote(input: QuoteInput): Quote {
         break;
       }
 
-      const rawKm = isRound
-        ? distanceKm * 2
-        : Math.round(distanceKm * OUTSTATION.oneWayReturnFactor);
-      const minKm = isRound ? OUTSTATION.minKmPerDay * days : OUTSTATION.minKmOneWay;
+      const card = isRound ? OUTSTATION.roundTrip : OUTSTATION.oneWay;
+      const rawKm = isRound ? distanceKm * 2 : distanceKm;
+      const minKm = isRound ? OUTSTATION.roundTrip.minKmPerDay * days : OUTSTATION.oneWay.minKm;
       chargeableKm = Math.max(rawKm, minKm);
 
-      const rate = OUTSTATION.perKm[cab.id];
+      const rate = card.perKm[cab.id];
       lines.push({
         label: `Fare (${chargeableKm} km × ₹${rate}/km)`,
         detail: isRound
           ? chargeableKm > rawKm
-            ? `Route is ${rawKm} km, but a round trip bills a minimum of ${OUTSTATION.minKmPerDay} km per day (${days} day${days > 1 ? "s" : ""}).`
+            ? `Route is ${rawKm} km return, but a round trip bills a minimum of ${OUTSTATION.roundTrip.minKmPerDay} km per day (${days} day${days > 1 ? "s" : ""}).`
             : `${distanceKm} km each way.`
-          : `${distanceKm} km one way. A drop bills for the driver's return leg as well.`,
+          : chargeableKm > rawKm
+            ? `Route is ${distanceKm} km, billed at our ${OUTSTATION.oneWay.minKm} km minimum for a drop.`
+            : `${distanceKm} km, one way only — you don't pay for the return.`,
         amount: money(chargeableKm * rate),
       });
 
-      const allowance = OUTSTATION.driverAllowancePerDay[cab.id] * days;
-      lines.push({
-        label: `Driver allowance (${days} day${days > 1 ? "s" : ""})`,
-        detail: "Driver's food and stay, as per standard outstation practice.",
-        amount: money(allowance),
-      });
+      // Only a round trip carries the driver's allowance: on a drop the car is
+      // released at the destination, which is exactly why a drop costs less.
+      if (isRound) {
+        const allowance = OUTSTATION.roundTrip.driverAllowancePerDay[cab.id] * days;
+        lines.push({
+          label: `Driver allowance (${days} day${days > 1 ? "s" : ""})`,
+          detail: "Driver's food and stay, as per standard outstation practice.",
+          amount: money(allowance),
+        });
+      }
       break;
     }
 

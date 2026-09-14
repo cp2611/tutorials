@@ -56,31 +56,38 @@ export const CAB_TYPES: {
 ];
 
 /** ---------------------------------------------------------------- OUTSTATION
- *  Billed as: per-km rate × chargeable km, plus a driver allowance per day.
- *  Chargeable km respects an industry-standard daily minimum — a round trip
- *  that covers only 90 km still bills the 250 km minimum for that day.
+ *  A one-way drop and a round trip are two different products with two
+ *  different rate cards, so they get two tables.
+ *
+ *  A one-way drop bills the distance travelled and nothing else — no return
+ *  leg, no driver allowance. That is not a discount, it is how the whole
+ *  Indian market sells it ("pay only for the distance you travel"), and it is
+ *  the reason one-way is the cheaper product. Charging for the driver's empty
+ *  return is economically tempting and commercially fatal: it puts you 60-80%
+ *  above every aggregator on the same route. Your margin on a drop comes from
+ *  buying below these rates, not from billing the return.
+ *
+ *  A round trip holds the car for the whole trip, so it bills both directions,
+ *  a daily minimum, and the driver's allowance — but at a lower per-km rate.
+ *
+ *  Rates below are the market rates found for Mumbai in Sept 2026 (see
+ *  README). They are what you can CHARGE. What you PAY your partner is a
+ *  separate number you must get from them before advertising.
  */
 export const OUTSTATION = {
-  perKm: { hatchback: 11, sedan: 13, suv: 17, crysta: 20, tempo: 26 } satisfies PerCab,
-  /** Driver bata, per calendar day of the trip. */
-  driverAllowancePerDay: { hatchback: 300, sedan: 300, suv: 400, crysta: 400, tempo: 600 } satisfies PerCab,
-  /**
-   * A one-way drop still sends the car back empty, so billing only the distance
-   * travelled loses money on every long route — a Mumbai→Goa drop is 590 km
-   * charged and 1,180 km driven. Chargeable distance is therefore
-   * `distance × oneWayReturnFactor`, floored at minKmOneWay.
-   *
-   * 1.6 assumes the driver usually picks up something for part of the way back.
-   * Raise it towards 2 if your partner charges you the full return leg; lower
-   * it only on corridors where return loads are reliable — and on those, give
-   * the route an `oneWayFlat` price in ROUTES instead, which beats any factor.
-   */
-  oneWayReturnFactor: 1.6,
-  /** Floor for very short drops, where the factor alone under-charges. */
-  minKmOneWay: 130,
-  /** Round trips bill at least this many km per day. */
-  minKmPerDay: 250,
-  /** Added once if pickup is between nightChargeFrom and nightChargeTo. */
+  oneWay: {
+    perKm: { hatchback: 10, sedan: 12, suv: 15, crysta: 19, tempo: 24 } satisfies PerCab,
+    /** Very short drops still cost the operator a full trip out and back. */
+    minKm: 130,
+  },
+  roundTrip: {
+    perKm: { hatchback: 9, sedan: 10, suv: 14, crysta: 17, tempo: 22 } satisfies PerCab,
+    /** Industry standard: a day is billed at 250 km even if you travel 90. */
+    minKmPerDay: 250,
+    /** Driver bata — food and stay. Round trips only. */
+    driverAllowancePerDay: { hatchback: 300, sedan: 300, suv: 400, crysta: 400, tempo: 600 } satisfies PerCab,
+  },
+  /** Added once, on any trip type, if pickup falls in the night window. */
   nightCharge: { hatchback: 300, sedan: 300, suv: 400, crysta: 400, tempo: 500 } satisfies PerCab,
   nightChargeFromHour: 22, // 10 PM
   nightChargeToHour: 6, //  6 AM
@@ -89,7 +96,12 @@ export const OUTSTATION = {
 /** ------------------------------------------------------------------- AIRPORT
  *  Flat price per (zone, cab type) for Chhatrapati Shivaji Maharaj
  *  International Airport (BOM) — Terminal 1 Santacruz and Terminal 2 Sahar.
- *  Add a zone for any other airport you start serving.
+ *
+ *  Priced against the MIAL prepaid booth and the app aggregators, because that
+ *  is what a customer standing in the arrivals hall compares you with. The
+ *  booth is genuinely cheap on short hops (₹350–450 to Bandra), so the money
+ *  here is in the longer zones and in being pre-booked and waiting, not in
+ *  beating the booth on price.
  */
 export const AIRPORT_ZONES: {
   id: string;
@@ -99,32 +111,32 @@ export const AIRPORT_ZONES: {
   {
     id: "bom_western_suburbs",
     label: "Mumbai Airport ⇄ Andheri / Bandra / Juhu",
-    price: { hatchback: 600, sedan: 750, suv: 1100, crysta: 1400, tempo: 2200 },
+    price: { hatchback: 450, sedan: 550, suv: 850, crysta: 1100, tempo: 1800 },
   },
   {
     id: "bom_central_suburbs",
     label: "Mumbai Airport ⇄ Powai / Ghatkopar / Chembur",
-    price: { hatchback: 700, sedan: 850, suv: 1250, crysta: 1550, tempo: 2400 },
+    price: { hatchback: 550, sedan: 650, suv: 950, crysta: 1200, tempo: 2000 },
   },
   {
     id: "bom_south_mumbai",
     label: "Mumbai Airport ⇄ South Mumbai (Colaba, Fort, Worli)",
-    price: { hatchback: 900, sedan: 1100, suv: 1600, crysta: 1900, tempo: 2900 },
+    price: { hatchback: 750, sedan: 900, suv: 1300, crysta: 1600, tempo: 2500 },
   },
   {
     id: "bom_borivali",
     label: "Mumbai Airport ⇄ Borivali / Dahisar / Mira Road",
-    price: { hatchback: 850, sedan: 1000, suv: 1450, crysta: 1750, tempo: 2700 },
+    price: { hatchback: 700, sedan: 850, suv: 1250, crysta: 1500, tempo: 2400 },
   },
   {
     id: "bom_thane",
     label: "Mumbai Airport ⇄ Thane / Mulund",
-    price: { hatchback: 950, sedan: 1150, suv: 1650, crysta: 2000, tempo: 3000 },
+    price: { hatchback: 800, sedan: 950, suv: 1400, crysta: 1700, tempo: 2600 },
   },
   {
     id: "bom_navi_mumbai",
     label: "Mumbai Airport ⇄ Navi Mumbai (Vashi, Nerul, Belapur)",
-    price: { hatchback: 1000, sedan: 1200, suv: 1750, crysta: 2100, tempo: 3200 },
+    price: { hatchback: 850, sedan: 1000, suv: 1450, crysta: 1800, tempo: 2800 },
   },
 ];
 
@@ -150,8 +162,8 @@ export const TOUR_PACKAGES: {
   {
     id: "darshan_full_day",
     label: "Mumbai Darshan — full day",
-    hours: 10,
-    km: 100,
+    hours: 8,
+    km: 80,
     highlights: [
       "Gateway of India",
       "Marine Drive & Nariman Point",
@@ -162,9 +174,9 @@ export const TOUR_PACKAGES: {
       "Bandra–Worli Sea Link",
       "Juhu Beach",
     ],
-    price: { hatchback: 2600, sedan: 3000, suv: 4200, crysta: 5000, tempo: 7000 },
-    extraPerHour: { hatchback: 160, sedan: 190, suv: 260, crysta: 310, tempo: 420 },
-    extraPerKm: { hatchback: 13, sedan: 15, suv: 19, crysta: 22, tempo: 28 },
+    price: { hatchback: 1900, sedan: 2200, suv: 2900, crysta: 3500, tempo: 6000 },
+    extraPerHour: { hatchback: 150, sedan: 170, suv: 220, crysta: 280, tempo: 400 },
+    extraPerKm: { hatchback: 12, sedan: 14, suv: 17, crysta: 20, tempo: 26 },
   },
   {
     id: "darshan_half_day",
@@ -178,9 +190,9 @@ export const TOUR_PACKAGES: {
       "Haji Ali Dargah",
       "Bandra–Worli Sea Link",
     ],
-    price: { hatchback: 1500, sedan: 1750, suv: 2500, crysta: 3000, tempo: 4200 },
-    extraPerHour: { hatchback: 160, sedan: 190, suv: 260, crysta: 310, tempo: 420 },
-    extraPerKm: { hatchback: 13, sedan: 15, suv: 19, crysta: 22, tempo: 28 },
+    price: { hatchback: 1250, sedan: 1450, suv: 1950, crysta: 2350, tempo: 3800 },
+    extraPerHour: { hatchback: 150, sedan: 170, suv: 220, crysta: 280, tempo: 400 },
+    extraPerKm: { hatchback: 12, sedan: 14, suv: 17, crysta: 20, tempo: 26 },
   },
   {
     id: "mumbai_by_night",
@@ -194,9 +206,9 @@ export const TOUR_PACKAGES: {
       "Gateway of India & Colaba Causeway",
       "Juhu Beach",
     ],
-    price: { hatchback: 1300, sedan: 1500, suv: 2200, crysta: 2600, tempo: 3600 },
-    extraPerHour: { hatchback: 160, sedan: 190, suv: 260, crysta: 310, tempo: 420 },
-    extraPerKm: { hatchback: 13, sedan: 15, suv: 19, crysta: 22, tempo: 28 },
+    price: { hatchback: 1100, sedan: 1300, suv: 1750, crysta: 2100, tempo: 3400 },
+    extraPerHour: { hatchback: 150, sedan: 170, suv: 220, crysta: 280, tempo: 400 },
+    extraPerKm: { hatchback: 12, sedan: 14, suv: 17, crysta: 20, tempo: 26 },
   },
 ];
 
@@ -217,7 +229,7 @@ export const RENTAL_PACKAGES: {
     label: "4 hours / 40 km",
     hours: 4,
     km: 40,
-    price: { hatchback: 1100, sedan: 1300, suv: 1900, crysta: 2300, tempo: 3200 },
+    price: { hatchback: 1100, sedan: 1300, suv: 1750, crysta: 2100, tempo: 3400 },
     extraPerHour: { hatchback: 150, sedan: 180, suv: 250, crysta: 300, tempo: 400 },
     extraPerKm: { hatchback: 11, sedan: 13, suv: 17, crysta: 20, tempo: 26 },
   },
@@ -226,7 +238,7 @@ export const RENTAL_PACKAGES: {
     label: "8 hours / 80 km",
     hours: 8,
     km: 80,
-    price: { hatchback: 1900, sedan: 2200, suv: 3100, crysta: 3700, tempo: 5200 },
+    price: { hatchback: 1900, sedan: 2200, suv: 2800, crysta: 3300, tempo: 5500 },
     extraPerHour: { hatchback: 150, sedan: 180, suv: 250, crysta: 300, tempo: 400 },
     extraPerKm: { hatchback: 11, sedan: 13, suv: 17, crysta: 20, tempo: 26 },
   },
@@ -235,7 +247,7 @@ export const RENTAL_PACKAGES: {
     label: "12 hours / 120 km",
     hours: 12,
     km: 120,
-    price: { hatchback: 2700, sedan: 3100, suv: 4300, crysta: 5100, tempo: 7000 },
+    price: { hatchback: 2600, sedan: 3000, suv: 3900, crysta: 4600, tempo: 7500 },
     extraPerHour: { hatchback: 150, sedan: 180, suv: 250, crysta: 300, tempo: 400 },
     extraPerKm: { hatchback: 11, sedan: 13, suv: 17, crysta: 20, tempo: 26 },
   },
@@ -245,8 +257,8 @@ export const RENTAL_PACKAGES: {
  *  Per-km with a minimum fare, so a 2 km hop is never quoted at ₹26.
  */
 export const LOCAL = {
-  perKm: { hatchback: 18, sedan: 21, suv: 26, crysta: 31, tempo: 40 } satisfies PerCab,
-  minFare: { hatchback: 400, sedan: 450, suv: 600, crysta: 700, tempo: 1000 } satisfies PerCab,
+  perKm: { hatchback: 15, sedan: 18, suv: 23, crysta: 27, tempo: 36 } satisfies PerCab,
+  minFare: { hatchback: 350, sedan: 400, suv: 550, crysta: 650, tempo: 950 } satisfies PerCab,
 };
 
 /** --------------------------------------------------------- OUTSTATION ROUTES
@@ -278,7 +290,7 @@ export const ROUTES: {
     from: "Mumbai",
     to: "Lonavala",
     km: 83,
-    oneWayFlat: { hatchback: 1800, sedan: 2100, suv: 2900, crysta: 3400, tempo: 5000 },
+    oneWayFlat: { hatchback: 1500, sedan: 1800, suv: 2250, crysta: 2850, tempo: 3600 },
   },
   { from: "Mumbai", to: "Khandala", km: 80 },
   { from: "Mumbai", to: "Matheran", km: 85 },
@@ -286,7 +298,7 @@ export const ROUTES: {
     from: "Mumbai",
     to: "Alibaug",
     km: 100,
-    oneWayFlat: { hatchback: 2000, sedan: 2300, suv: 3200, crysta: 3800, tempo: 5500 },
+    oneWayFlat: { hatchback: 1900, sedan: 2300, suv: 2900, crysta: 3650, tempo: 4600 },
   },
   { from: "Mumbai", to: "Igatpuri", km: 120 },
   { from: "Mumbai", to: "Karjat", km: 65 },
@@ -296,7 +308,7 @@ export const ROUTES: {
     from: "Mumbai",
     to: "Pune",
     km: 150,
-    oneWayFlat: { hatchback: 2400, sedan: 2800, suv: 3800, crysta: 4500, tempo: 6500 },
+    oneWayFlat: { hatchback: 1850, sedan: 2200, suv: 2750, crysta: 3500, tempo: 4400 },
   },
 
   // Hill stations and pilgrimage
@@ -305,7 +317,7 @@ export const ROUTES: {
   { from: "Mumbai", to: "Bhimashankar", km: 215 },
   { from: "Mumbai", to: "Shirdi", km: 240 },
   { from: "Mumbai", to: "Panchgani", km: 245 },
-  { from: "Mumbai", to: "Mahabaleshwar", km: 260 },
+  { from: "Mumbai", to: "Mahabaleshwar", km: 250 },
   { from: "Mumbai", to: "Lavasa", km: 200 },
 
   // Konkan coast

@@ -189,55 +189,95 @@ Current behaviour with the shipped defaults:
 
 ---
 
-## Mumbai setup, and the one number to check first
+## Where these prices come from
 
-The site ships configured for Mumbai: pickups from Mumbai, Navi Mumbai, Thane
-and Panvel; 26 measured outstation routes from Lonavala and Alibaug out to Goa
-and Ahmedabad; six CSMIA airport zones; and three Mumbai Darshan packages.
+The fares in `config/fares.ts` are set from a survey of what Mumbai operators
+publicly advertise, done in September 2026. Sources at the bottom of this
+section. **They are what you can charge. What you pay your partner is a
+different number you must get from them before advertising.**
 
-**Sightseeing is its own trip type, not a relabelled hourly rental.** Mumbai
-Darshan is a product people search for by name, so it has its own price and a
-published stop list — Gateway of India, Marine Drive, Siddhivinayak, Haji Ali,
-Hanging Gardens, Dhobi Ghat, the Sea Link, Juhu. The itinerary is what makes a
-customer pick you over a site that just says "8 hours / 80 km". Entry tickets
-and ferry charges are excluded, on the pricing page and in the terms.
+### The one structural thing worth understanding
 
-### One-way drops are the risky ones
+A one-way drop and a round trip are different products with different rate
+cards, and the difference is not a discount:
 
-A round trip is easy to price: the car is with the customer the whole time. A
-one-way drop is not, because the car still has to come back. Mumbai → Goa is
-590 km charged and 1,180 km driven.
+| | One-way drop | Round trip |
+|---|---|---|
+| Distance billed | one way only | both directions |
+| Minimum | 130 km | 250 km per day |
+| Driver allowance | none | per day |
+| Sedan rate | ₹12/km | ₹10/km |
 
-Two settings handle this, and you should set both from what your partner
-actually tells you:
+It is tempting to bill a one-way drop for the driver's empty return — the car
+really does drive back. Don't. Every aggregator sells one-way as "pay only for
+the distance you travel", and it is the cheaper product precisely because you
+skip the return leg and the driver's overnight. Billing the return puts you
+60–80% above the market on the same route, which is a rate nobody pays. Your
+margin on a drop comes from buying below these rates, not from charging more.
 
-- `OUTSTATION.oneWayReturnFactor` (default `1.6`) multiplies the distance on
-  any route without a flat rate. Push it toward `2` if your partner bills you
-  the full return leg.
-- `oneWayFlat` on a route in `ROUTES` overrides the formula completely. Use it
-  on corridors like Mumbai–Pune where return loads are reliable and your
-  partner quotes a fixed drop rate — the formula cannot know that, and without
-  the override you would price as if the car returns empty and lose the
-  booking to anyone quoting the real market rate.
+Round trips are where the structure works in your favour: both directions, a
+250 km daily minimum, and the allowance.
 
-**Before advertising, ask each partner one question per route: "what do you
-charge me for this drop?"** Then check it against the break-even rate implied
-by the quote. With the shipped placeholders, on a sedan:
+### What the market charges (sedan, Sept 2026)
 
-| Route | You quote | km driven | Works if your partner charges |
-|---|---|---|---|
-| Mumbai → Pune | ₹2,800 | 300 | ≤ ₹9.33/km, allowance included |
-| Mumbai → Lonavala | ₹2,100 | 166 | ≤ ₹12.65/km, allowance included |
-| Mumbai → Alibaug | ₹2,300 | 200 | ≤ ₹11.50/km, allowance included |
-| Mumbai → Shirdi | ₹5,290 | 480 | ≤ ₹10.40/km + ₹300 allowance |
-| Mumbai → Goa | ₹12,570 | 1,180 | ≤ ₹10.40/km + ₹300 allowance |
+| Route / product | Market range | This site |
+|---|---|---|
+| Mumbai → Pune, one way | ₹1,834–2,800 | ₹2,200 |
+| Mumbai → Lonavala, one way | ₹1,399–2,500 | ₹1,800 |
+| Mumbai → Alibaug, one way | ₹2,300–3,500 | ₹2,300 |
+| Mumbai → Shirdi, one way | ₹2,849–3,100 | ₹2,880 |
+| Mumbai → Mahabaleshwar, one way | ₹3,200–3,954 | ₹3,000 |
+| Mumbai → Goa, one way | ₹7,061–10,703 | ₹7,080 |
+| Mumbai → Shirdi, 2-day round | ~₹4,590–6,000 | ₹5,600 |
+| Airport ⇄ Andheri / Bandra | ₹400–600 | ₹550 |
+| Airport ⇄ South Mumbai | ₹750–900 | ₹900 |
+| Mumbai Darshan, 8 hrs / 80 km | ₹1,800–2,400 | ₹2,200 |
+| Local rental, 8 hrs / 80 km | ₹2,000–3,000 | ₹2,200 |
 
-Pune is the tight one, which is expected — that corridor is competitive and
-only works on a flat rate with a return load. If your partner won't do it at
-that number, raise `oneWayFlat` for Pune rather than dropping the route.
+Published per-km rate cards, for reference: sedan ₹10–12/km, Ertiga/SUV
+₹14–16/km, Innova ₹18/km, Crysta ₹18–20/km. Driver allowance ₹300–400/day.
+Minimum 250–300 km/day on round trips. Tolls ₹500–2,000 per route and state
+permit ₹200–500 per state are charged at actual, which is why they are listed
+as exclusions on every quote.
 
-Road distances in `ROUTES` are approximate. Check the ones you actually sell:
-at ₹13/km a 20 km error moves every quote by ₹260.
+### Three places the market will bite you
+
+**Airport transfers are close to unwinnable on price.** The MIAL prepaid booth
+does Bandra for ₹350–450, and a customer already standing in arrivals has it
+right there. You cannot beat that. What you can sell is being pre-booked,
+waiting, and known — so treat airport runs as a way to acquire a customer for
+their next outstation trip, not as a margin line.
+
+**Mumbai → Pune is the most contested route in the state.** Gozo advertises
+₹1,834, Uber around ₹2,447, MakeMyTrip ₹1,882. At ₹2,200 you are mid-pack and
+must win on answering the phone, not on price.
+
+**"Starting from" prices are not prices.** Almost every figure above is a
+teaser for the smallest car on the slowest day. Aggregator fares also surge
+2–3× on weekends and holidays, which fixed-rate operators explicitly market
+against. Your fixed price is a genuine advantage on a long weekend — say so in
+the ad copy rather than trying to undercut a teaser.
+
+### Before you advertise
+
+Road distances in `ROUTES` are approximate and operator listings disagree
+(Shirdi appears as both 240 km and 291 km depending on route). Check the ones
+you will actually sell.
+
+Then ask each partner, per route: **"what do you charge me for this drop?"**
+Subtract it from the table above. If the gap is not worth your time, either
+raise the route's `oneWayFlat` and compete on service, or drop the route.
+
+Sources: [CabBazar route pages and rate guide](https://cabbazar.com/blog/how-much-does-an-outstation-cab-cost-in-india/),
+[Gozo Cabs](https://www.gozocabs.com/book-taxi/mumbai-pune),
+[Uber Intercity](https://www.uber.com/in/en/r/intercity/mumbai-maharashtra-to-pune-maharashtra),
+[MakeMyTrip](https://www.makemytrip.com/car-rental/mumbai-shirdi-cab-services.html),
+[Savaari](https://www.savaari.com/mumbai/mumbai-to-mahabaleshwar-cabs),
+[TaxiBazaar Mumbai airport guide](https://www.taxibazaar.in/mumbai-airport-taxi-guide.php),
+[Pravasi Cab Mumbai fares](https://pravasicab.com/taxi-fare-in-mumbai),
+[Payal Cab local packages](https://www.payalcab.in/mumbai-local-full-day-taxi.php),
+[Citycabz Mumbai Darshan](https://citycabz.com/mumbai-darshan-cab/),
+[RoundTripCab Mumbai Darshan](https://www.roundtripcab.com/mumbai-darshan-cab-booking/).
 
 ## Adding a payment gateway later
 

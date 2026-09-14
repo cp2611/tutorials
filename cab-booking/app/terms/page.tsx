@@ -43,11 +43,12 @@ export default function TermsPage() {
           {EXCLUSIONS.join(", ").toLowerCase()}.
         </li>
         <li>
-          Outstation round trips are billed on a minimum of {OUTSTATION.minKmPerDay} km per day; one-way
-          trips on a minimum of {OUTSTATION.minKmOneWay} km, which covers the driver&apos;s return leg.
+          Outstation round trips are billed on a minimum of {OUTSTATION.roundTrip.minKmPerDay} km per
+          day, both directions, plus a driver allowance per day. One-way drops bill only the distance
+          travelled, with no driver allowance, subject to a {OUTSTATION.oneWay.minKm} km minimum.
         </li>
         <li>
-          A driver allowance applies per day on outstation trips, and a night charge applies to pickups
+          A driver allowance applies per day on outstation round trips, and a night charge applies to pickups
           between {OUTSTATION.nightChargeFromHour}:00 and 0{OUTSTATION.nightChargeToHour}:00.
         </li>
         <li>
