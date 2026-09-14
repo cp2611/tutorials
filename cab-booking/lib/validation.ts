@@ -14,8 +14,6 @@ export const quoteSchema = z.object({
   returnAt: z.string().max(40).optional(),
   zoneId: z.string().max(60).optional(),
   packageId: z.string().max(60).optional(),
-  extraHours: z.coerce.number().min(0).max(48).optional(),
-  extraKm: z.coerce.number().min(0).max(2000).optional(),
 });
 
 export const utmSchema = z

@@ -60,6 +60,13 @@ export default function TermsPage() {
           the trip. You may cancel for a full refund if the corrected fare does not suit you.
         </li>
         <li>
+          Hourly and sightseeing packages bill on{" "}
+          <strong>whichever you exceed by more — hours or kilometres, never both</strong>. A
+          10-hour, 70 km day on an 8 hr / 80 km package is charged two extra hours; an 8-hour,
+          100 km day is charged twenty extra kilometres. Extra rates are shown with your fare and
+          are settled directly with the driver.
+        </li>
+        <li>
           Sightseeing packages include the car, the driver and the hours and kilometres stated.{" "}
           <strong>Monument entry tickets, ferry charges and guide fees are not included</strong> and
           are paid by you at each stop. Stops may be reordered or skipped on the day for traffic,

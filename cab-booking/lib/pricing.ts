@@ -12,6 +12,7 @@ import {
   TOUR_PACKAGES,
   SERVICE_CITIES,
   type CabTypeId,
+  type PerCab,
   type TripType,
 } from "@/config/fares";
 
@@ -46,8 +47,6 @@ export type QuoteInput = {
   returnAt?: string;
   zoneId?: string;
   packageId?: string;
-  extraHours?: number;
-  extraKm?: number;
 };
 
 const money = (n: number) => Math.round(n);
@@ -102,6 +101,28 @@ function computeAdvance(total: number, tripType: TripType): number {
   const floor = Math.min(ADVANCE.floor, total * ADVANCE.floorMaxPercentOfFare);
   adv = Math.max(adv, Math.floor(floor / ADVANCE.roundTo) * ADVANCE.roundTo);
   return Math.min(adv, total);
+}
+
+/**
+ * How a package bills once you go past what it includes.
+ *
+ * The industry rule is "whichever is higher": run 10 hours but only 70 km and
+ * you pay two extra hours; run 8 hours but 100 km and you pay twenty extra km.
+ * You are never charged for both.
+ *
+ * The overage is not quoted at booking because nobody knows it yet — it is
+ * settled with the driver at the end. What the customer gets up front is the
+ * rule and the rates, in writing, which is what stops the argument later.
+ */
+export function overageRule(
+  pkg: { hours: number; km: number; extraPerHour: PerCab; extraPerKm: PerCab },
+  cabTypeId: CabTypeId,
+): string {
+  return (
+    `Beyond ${pkg.hours} hours or ${pkg.km} km: ₹${pkg.extraPerHour[cabTypeId]} per extra hour ` +
+    `or ₹${pkg.extraPerKm[cabTypeId]} per extra km — whichever is higher, not both. ` +
+    `Settled with the driver at the end of the trip.`
+  );
 }
 
 export class QuoteError extends Error {}
@@ -184,24 +205,8 @@ export function buildQuote(input: QuoteInput): Quote {
         detail: `${pkg.hours} hours / ${pkg.km} km included, car and driver at your disposal.`,
         amount: money(pkg.price[cab.id]),
       });
-      const th = Math.max(0, Math.floor(input.extraHours ?? 0));
-      const tk = Math.max(0, Math.floor(input.extraKm ?? 0));
-      if (th > 0) {
-        lines.push({
-          label: `Extra hours (${th} × ₹${pkg.extraPerHour[cab.id]})`,
-          amount: money(th * pkg.extraPerHour[cab.id]),
-        });
-      }
-      if (tk > 0) {
-        lines.push({
-          label: `Extra km (${tk} × ₹${pkg.extraPerKm[cab.id]})`,
-          amount: money(tk * pkg.extraPerKm[cab.id]),
-        });
-      }
       notes.push(`Stops: ${pkg.highlights.join(" · ")}.`);
-      notes.push(
-        `Beyond ${pkg.hours} hours or ${pkg.km} km you pay ₹${pkg.extraPerHour[cab.id]}/hour and ₹${pkg.extraPerKm[cab.id]}/km, settled with the driver.`,
-      );
+      notes.push(overageRule(pkg, cab.id));
       break;
     }
 
@@ -225,23 +230,7 @@ export function buildQuote(input: QuoteInput): Quote {
         detail: "Car and driver at your disposal within city limits.",
         amount: money(pkg.price[cab.id]),
       });
-      const eh = Math.max(0, Math.floor(input.extraHours ?? 0));
-      const ek = Math.max(0, Math.floor(input.extraKm ?? 0));
-      if (eh > 0) {
-        lines.push({
-          label: `Extra hours (${eh} × ₹${pkg.extraPerHour[cab.id]})`,
-          amount: money(eh * pkg.extraPerHour[cab.id]),
-        });
-      }
-      if (ek > 0) {
-        lines.push({
-          label: `Extra km (${ek} × ₹${pkg.extraPerKm[cab.id]})`,
-          amount: money(ek * pkg.extraPerKm[cab.id]),
-        });
-      }
-      notes.push(
-        `Beyond the package you pay ₹${pkg.extraPerHour[cab.id]}/hour and ₹${pkg.extraPerKm[cab.id]}/km, settled with the driver.`,
-      );
+      notes.push(overageRule(pkg, cab.id));
       break;
     }
 

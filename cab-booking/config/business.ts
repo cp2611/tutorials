@@ -40,7 +40,7 @@ export const BUSINESS = {
   trustBadges: [
     "Verified drivers",
     "No hidden charges",
-    "Pay ₹500 now, rest to driver",
+    "Small advance now, rest to driver",
     "Free cancellation (see policy)",
   ],
 } as const;

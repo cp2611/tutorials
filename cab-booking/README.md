@@ -159,7 +159,7 @@ link on every order with the message pre-written, which is about as fast by hand
 | File | What's in it |
 |---|---|
 | `config/business.ts` | Brand name, phone, email, address, UPI ID, refund windows |
-| `config/fares.ts` | Cab types, per-km rates, airport zones, rental packages, routes, service cities, lead times, advance policy |
+| `config/fares.ts` | Eight car models with their own rates, airport zones, tour and rental packages, routes, service cities, lead times, advance policy |
 
 Both are plain numbers and text with comments. Edit, commit, push — Vercel
 redeploys and prices change everywhere, including the terms page.
@@ -181,11 +181,11 @@ Current behaviour with the shipped defaults:
 
 | Trip | Fare | Advance |
 |---|---|---|
-| Local drop, 5 km | ₹450 | ₹200 (44%) |
-| Airport ⇄ South Mumbai | ₹1,100 | ₹300 (27%) |
-| Mumbai Darshan, full day | ₹3,000 | ₹750 (25%) |
-| Mumbai → Pune, one-way drop | ₹2,800 | ₹800 (29%) |
-| Mumbai → Goa, 5 days, Crysta | ₹27,000 | ₹2,700 (10%) |
+| Local drop, 5 km | ₹400 | ₹200 (50%) |
+| Airport ⇄ South Mumbai | ₹880 | ₹250 (28%) |
+| Mumbai Darshan, 8 hrs / 80 km | ₹2,200 | ₹650 (30%) |
+| Mumbai → Pune, one-way drop | ₹2,300 | ₹650 (28%) |
+| Mumbai → Goa, 5 days, Crysta | ₹24,500 | ₹2,450 (10%) |
 
 ---
 
@@ -196,17 +196,58 @@ publicly advertise, done in September 2026. Sources at the bottom of this
 section. **They are what you can charge. What you pay your partner is a
 different number you must get from them before advertising.**
 
-### The one structural thing worth understanding
+### Rates sit at the midpoint of the surveyed range
 
-A one-way drop and a round trip are different products with different rate
-cards, and the difference is not a discount:
+Not the floor. Undercutting a teaser price you cannot sustain wins bookings you
+lose money on; the middle leaves room to discount by hand when a customer
+haggles on WhatsApp, which they will.
+
+| Route / product (Dzire) | Market range | This site |
+|---|---|---|
+| Mumbai → Pune, one way | ₹1,834–2,800 | ₹2,300 |
+| Mumbai → Lonavala, one way | ₹1,399–2,500 | ₹1,950 |
+| Mumbai → Alibaug, one way | ₹2,300–3,500 | ₹2,900 |
+| Mumbai → Shirdi, one way | ₹2,849–3,100 | ₹3,000 |
+| Mumbai → Mahabaleshwar, one way | ₹3,200–3,954 | ₹3,600 |
+| Mumbai → Goa, one way | ₹7,061–10,703 | ₹8,900 |
+| Airport ⇄ South Mumbai | ₹750–900 | ₹880 |
+| Mumbai Darshan, 8 hrs / 80 km | ₹1,800–2,400 | ₹2,200 |
+| Local rental, 8 hrs / 80 km | ₹2,000–3,000 | ₹2,400 |
+
+### Pricing by car model, not by category
+
+Eight models, because that is how the market quotes and how customers shop —
+somebody who wants an Innova will not accept "SUV", and the gap between an
+Ertiga and a Crysta is ₹4/km.
+
+| Model | Seats | One-way | Round trip | Local | Extra hr | Extra km |
+|---|---|---|---|---|---|---|
+| Hatchback — Wagon R, Celerio | 4 | ₹11/km | ₹10/km | ₹14/km | ₹150 | ₹11 |
+| Swift Dzire — Amaze, Xcent | 4 | ₹13/km | ₹11/km | ₹17/km | ₹175 | ₹13 |
+| Toyota Etios — Honda City | 4 | ₹14/km | ₹12/km | ₹18/km | ₹175 | ₹14 |
+| Ertiga — Rumion, Carens | 6 | ₹15/km | ₹14/km | ₹21/km | ₹200 | ₹15 |
+| Innova | 6 | ₹17/km | ₹16/km | ₹24/km | ₹200 | ₹16 |
+| Innova Crysta | 6 | ₹19/km | ₹18/km | ₹27/km | ₹250 | ₹18 |
+| Tempo Traveller 12str | 12 | ₹24/km | ₹22/km | ₹34/km | ₹350 | ₹24 |
+| Force Urbania 16str | 16 | ₹28/km | ₹26/km | ₹40/km | ₹450 | ₹28 |
+
+Published cards for comparison: Dzire/Etios ₹12–13/km, Ertiga ₹13–15, Innova
+₹16–18, Crysta ₹18–20, Tempo Traveller ₹22–30.
+
+Flat prices on the six featured routes are set from the surveyed midpoint for a
+Dzire and scaled across this ladder, so the model spread stays consistent
+whichever route a customer looks at.
+
+### One-way and round trip are different products
+
+Not the same product with a discount:
 
 | | One-way drop | Round trip |
 |---|---|---|
 | Distance billed | one way only | both directions |
 | Minimum | 130 km | 250 km per day |
 | Driver allowance | none | per day |
-| Sedan rate | ₹12/km | ₹10/km |
+| Dzire rate | ₹13/km | ₹11/km |
 
 It is tempting to bill a one-way drop for the driver's empty return — the car
 really does drive back. Don't. Every aggregator sells one-way as "pay only for
@@ -215,30 +256,33 @@ skip the return leg and the driver's overnight. Billing the return puts you
 60–80% above the market on the same route, which is a rate nobody pays. Your
 margin on a drop comes from buying below these rates, not from charging more.
 
-Round trips are where the structure works in your favour: both directions, a
-250 km daily minimum, and the allowance.
+### Packages: the "whichever is higher" rule
 
-### What the market charges (sedan, Sept 2026)
+Local and sightseeing hire is sold as a block of hours **and** kilometres — the
+standard being 8 hrs / 80 km. Going past either is chargeable, and the industry
+rule is that you bill **whichever is exceeded by more, never both**:
 
-| Route / product | Market range | This site |
-|---|---|---|
-| Mumbai → Pune, one way | ₹1,834–2,800 | ₹2,200 |
-| Mumbai → Lonavala, one way | ₹1,399–2,500 | ₹1,800 |
-| Mumbai → Alibaug, one way | ₹2,300–3,500 | ₹2,300 |
-| Mumbai → Shirdi, one way | ₹2,849–3,100 | ₹2,880 |
-| Mumbai → Mahabaleshwar, one way | ₹3,200–3,954 | ₹3,000 |
-| Mumbai → Goa, one way | ₹7,061–10,703 | ₹7,080 |
-| Mumbai → Shirdi, 2-day round | ~₹4,590–6,000 | ₹5,600 |
-| Airport ⇄ Andheri / Bandra | ₹400–600 | ₹550 |
-| Airport ⇄ South Mumbai | ₹750–900 | ₹900 |
-| Mumbai Darshan, 8 hrs / 80 km | ₹1,800–2,400 | ₹2,200 |
-| Local rental, 8 hrs / 80 km | ₹2,000–3,000 | ₹2,200 |
+- 10 hours, 70 km on an 8/80 package → two extra hours
+- 8 hours, 100 km → twenty extra km
+- 10 hours, 100 km → the larger of the two, not the sum
 
-Published per-km rate cards, for reference: sedan ₹10–12/km, Ertiga/SUV
-₹14–16/km, Innova ₹18/km, Crysta ₹18–20/km. Driver allowance ₹300–400/day.
-Minimum 250–300 km/day on round trips. Tolls ₹500–2,000 per route and state
-permit ₹200–500 per state are charged at actual, which is why they are listed
-as exclusions on every quote.
+The site does **not** quote overage at booking, because nobody knows it yet. It
+publishes the rule and that model's rates alongside the fare, and the driver
+settles the difference at the end. The written rule is what prevents the
+argument.
+
+### Night charge
+
+Pickups between 22:00 and 06:00 carry a flat night charge, ₹200–500 by model.
+Operators publish either a flat figure or a 10–25% surcharge; flat is used here
+because it survives being read aloud over the phone. It applies to every trip
+type, not just outstation.
+
+### Driver allowance, tolls and taxes
+
+Driver allowance ₹300–600 per day by model, round trips only. Tolls ₹500–2,000
+per route and state permit ₹200–500 per state are charged at actual — which is
+why they appear as exclusions on every quote and in the terms, per trip type.
 
 ### Three places the market will bite you
 

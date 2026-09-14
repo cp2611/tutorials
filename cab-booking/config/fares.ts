@@ -25,7 +25,15 @@ export const TRIP_TYPES: { id: TripType; label: string; blurb: string }[] = [
   { id: "local", label: "Local drop", blurb: "Point to point in the city" },
 ];
 
-export type CabTypeId = "hatchback" | "sedan" | "suv" | "crysta" | "tempo";
+export type CabTypeId =
+  | "hatchback"
+  | "dzire"
+  | "etios"
+  | "ertiga"
+  | "innova"
+  | "crysta"
+  | "tempo"
+  | "urbania";
 
 /**
  * A price table with one entry per cab type — the shape almost every rate in
@@ -49,10 +57,13 @@ export const CAB_TYPES: {
   examples: string;
 }[] = [
   { id: "hatchback", name: "Hatchback", seats: 4, bags: 2, examples: "Wagon R, Celerio, Indica" },
-  { id: "sedan", name: "Sedan", seats: 4, bags: 3, examples: "Dzire, Etios, Aura" },
-  { id: "suv", name: "SUV", seats: 6, bags: 4, examples: "Ertiga, Marazzo" },
-  { id: "crysta", name: "Innova Crysta", seats: 6, bags: 4, examples: "Innova Crysta" },
-  { id: "tempo", name: "Tempo Traveller", seats: 12, bags: 12, examples: "Force Tempo 12-seater" },
+  { id: "dzire", name: "Swift Dzire", seats: 4, bags: 3, examples: "Swift Dzire, Honda Amaze, Xcent" },
+  { id: "etios", name: "Toyota Etios", seats: 4, bags: 4, examples: "Etios, Honda City — bigger boot" },
+  { id: "ertiga", name: "Ertiga", seats: 6, bags: 3, examples: "Maruti Ertiga, Toyota Rumion, Kia Carens" },
+  { id: "innova", name: "Innova", seats: 6, bags: 4, examples: "Toyota Innova" },
+  { id: "crysta", name: "Innova Crysta", seats: 6, bags: 4, examples: "Toyota Innova Crysta" },
+  { id: "tempo", name: "Tempo Traveller", seats: 12, bags: 12, examples: "Force Tempo Traveller 12-seater" },
+  { id: "urbania", name: "Force Urbania", seats: 16, bags: 16, examples: "Force Urbania 16-seater" },
 ];
 
 /** ---------------------------------------------------------------- OUTSTATION
@@ -76,19 +87,23 @@ export const CAB_TYPES: {
  */
 export const OUTSTATION = {
   oneWay: {
-    perKm: { hatchback: 10, sedan: 12, suv: 15, crysta: 19, tempo: 24 } satisfies PerCab,
+    perKm: { hatchback: 11, dzire: 13, etios: 14, ertiga: 15, innova: 17, crysta: 19, tempo: 24, urbania: 28 } satisfies PerCab,
     /** Very short drops still cost the operator a full trip out and back. */
     minKm: 130,
   },
   roundTrip: {
-    perKm: { hatchback: 9, sedan: 10, suv: 14, crysta: 17, tempo: 22 } satisfies PerCab,
+    perKm: { hatchback: 10, dzire: 11, etios: 12, ertiga: 14, innova: 16, crysta: 18, tempo: 22, urbania: 26 } satisfies PerCab,
     /** Industry standard: a day is billed at 250 km even if you travel 90. */
     minKmPerDay: 250,
     /** Driver bata — food and stay. Round trips only. */
-    driverAllowancePerDay: { hatchback: 300, sedan: 300, suv: 400, crysta: 400, tempo: 600 } satisfies PerCab,
+    driverAllowancePerDay: { hatchback: 300, dzire: 300, etios: 300, ertiga: 350, innova: 400, crysta: 400, tempo: 500, urbania: 600 } satisfies PerCab,
   },
-  /** Added once, on any trip type, if pickup falls in the night window. */
-  nightCharge: { hatchback: 300, sedan: 300, suv: 400, crysta: 400, tempo: 500 } satisfies PerCab,
+  /**
+   * Added once, on any trip type, when pickup falls in the night window.
+   * Operators publish either a flat ₹200–300 or a 10–25% surcharge; a flat
+   * figure is used here because it survives being read aloud over the phone.
+   */
+  nightCharge: { hatchback: 200, dzire: 250, etios: 250, ertiga: 300, innova: 300, crysta: 350, tempo: 400, urbania: 500 } satisfies PerCab,
   nightChargeFromHour: 22, // 10 PM
   nightChargeToHour: 6, //  6 AM
 };
@@ -111,32 +126,32 @@ export const AIRPORT_ZONES: {
   {
     id: "bom_western_suburbs",
     label: "Mumbai Airport ⇄ Andheri / Bandra / Juhu",
-    price: { hatchback: 450, sedan: 550, suv: 850, crysta: 1100, tempo: 1800 },
+    price: { hatchback: 450, dzire: 550, etios: 600, ertiga: 700, innova: 800, crysta: 900, tempo: 1500, urbania: 1900 },
   },
   {
     id: "bom_central_suburbs",
     label: "Mumbai Airport ⇄ Powai / Ghatkopar / Chembur",
-    price: { hatchback: 550, sedan: 650, suv: 950, crysta: 1200, tempo: 2000 },
+    price: { hatchback: 550, dzire: 650, etios: 700, ertiga: 800, innova: 900, crysta: 1050, tempo: 1700, urbania: 2150 },
   },
   {
     id: "bom_south_mumbai",
     label: "Mumbai Airport ⇄ South Mumbai (Colaba, Fort, Worli)",
-    price: { hatchback: 750, sedan: 900, suv: 1300, crysta: 1600, tempo: 2500 },
+    price: { hatchback: 750, dzire: 875, etios: 950, ertiga: 1100, innova: 1250, crysta: 1400, tempo: 2200, urbania: 2800 },
   },
   {
     id: "bom_borivali",
     label: "Mumbai Airport ⇄ Borivali / Dahisar / Mira Road",
-    price: { hatchback: 700, sedan: 850, suv: 1250, crysta: 1500, tempo: 2400 },
+    price: { hatchback: 700, dzire: 825, etios: 900, ertiga: 1050, innova: 1200, crysta: 1350, tempo: 2100, urbania: 2650 },
   },
   {
     id: "bom_thane",
     label: "Mumbai Airport ⇄ Thane / Mulund",
-    price: { hatchback: 800, sedan: 950, suv: 1400, crysta: 1700, tempo: 2600 },
+    price: { hatchback: 800, dzire: 950, etios: 1025, ertiga: 1150, innova: 1300, crysta: 1500, tempo: 2350, urbania: 2950 },
   },
   {
     id: "bom_navi_mumbai",
     label: "Mumbai Airport ⇄ Navi Mumbai (Vashi, Nerul, Belapur)",
-    price: { hatchback: 850, sedan: 1000, suv: 1450, crysta: 1800, tempo: 2800 },
+    price: { hatchback: 850, dzire: 1000, etios: 1075, ertiga: 1250, innova: 1400, crysta: 1600, tempo: 2500, urbania: 3150 },
   },
 ];
 
@@ -174,9 +189,9 @@ export const TOUR_PACKAGES: {
       "Bandra–Worli Sea Link",
       "Juhu Beach",
     ],
-    price: { hatchback: 1900, sedan: 2200, suv: 2900, crysta: 3500, tempo: 6000 },
-    extraPerHour: { hatchback: 150, sedan: 170, suv: 220, crysta: 280, tempo: 400 },
-    extraPerKm: { hatchback: 12, sedan: 14, suv: 17, crysta: 20, tempo: 26 },
+    price: { hatchback: 1900, dzire: 2200, etios: 2400, ertiga: 2700, innova: 3000, crysta: 3400, tempo: 5500, urbania: 7000 },
+    extraPerHour: { hatchback: 150, dzire: 175, etios: 175, ertiga: 200, innova: 200, crysta: 250, tempo: 350, urbania: 450 },
+    extraPerKm: { hatchback: 11, dzire: 13, etios: 14, ertiga: 15, innova: 16, crysta: 18, tempo: 24, urbania: 28 },
   },
   {
     id: "darshan_half_day",
@@ -190,9 +205,9 @@ export const TOUR_PACKAGES: {
       "Haji Ali Dargah",
       "Bandra–Worli Sea Link",
     ],
-    price: { hatchback: 1250, sedan: 1450, suv: 1950, crysta: 2350, tempo: 3800 },
-    extraPerHour: { hatchback: 150, sedan: 170, suv: 220, crysta: 280, tempo: 400 },
-    extraPerKm: { hatchback: 12, sedan: 14, suv: 17, crysta: 20, tempo: 26 },
+    price: { hatchback: 1250, dzire: 1450, etios: 1550, ertiga: 1750, innova: 1950, crysta: 2200, tempo: 3600, urbania: 4600 },
+    extraPerHour: { hatchback: 150, dzire: 175, etios: 175, ertiga: 200, innova: 200, crysta: 250, tempo: 350, urbania: 450 },
+    extraPerKm: { hatchback: 11, dzire: 13, etios: 14, ertiga: 15, innova: 16, crysta: 18, tempo: 24, urbania: 28 },
   },
   {
     id: "mumbai_by_night",
@@ -206,9 +221,9 @@ export const TOUR_PACKAGES: {
       "Gateway of India & Colaba Causeway",
       "Juhu Beach",
     ],
-    price: { hatchback: 1100, sedan: 1300, suv: 1750, crysta: 2100, tempo: 3400 },
-    extraPerHour: { hatchback: 150, sedan: 170, suv: 220, crysta: 280, tempo: 400 },
-    extraPerKm: { hatchback: 12, sedan: 14, suv: 17, crysta: 20, tempo: 26 },
+    price: { hatchback: 1100, dzire: 1300, etios: 1400, ertiga: 1550, innova: 1750, crysta: 1950, tempo: 3200, urbania: 4100 },
+    extraPerHour: { hatchback: 150, dzire: 175, etios: 175, ertiga: 200, innova: 200, crysta: 250, tempo: 350, urbania: 450 },
+    extraPerKm: { hatchback: 11, dzire: 13, etios: 14, ertiga: 15, innova: 16, crysta: 18, tempo: 24, urbania: 28 },
   },
 ];
 
@@ -229,27 +244,27 @@ export const RENTAL_PACKAGES: {
     label: "4 hours / 40 km",
     hours: 4,
     km: 40,
-    price: { hatchback: 1100, sedan: 1300, suv: 1750, crysta: 2100, tempo: 3400 },
-    extraPerHour: { hatchback: 150, sedan: 180, suv: 250, crysta: 300, tempo: 400 },
-    extraPerKm: { hatchback: 11, sedan: 13, suv: 17, crysta: 20, tempo: 26 },
+    price: { hatchback: 1150, dzire: 1350, etios: 1450, ertiga: 1650, innova: 1850, crysta: 2100, tempo: 3400, urbania: 4300 },
+    extraPerHour: { hatchback: 150, dzire: 175, etios: 175, ertiga: 200, innova: 200, crysta: 250, tempo: 350, urbania: 450 },
+    extraPerKm: { hatchback: 11, dzire: 13, etios: 14, ertiga: 15, innova: 16, crysta: 18, tempo: 24, urbania: 28 },
   },
   {
     id: "8h80km",
     label: "8 hours / 80 km",
     hours: 8,
     km: 80,
-    price: { hatchback: 1900, sedan: 2200, suv: 2800, crysta: 3300, tempo: 5500 },
-    extraPerHour: { hatchback: 150, sedan: 180, suv: 250, crysta: 300, tempo: 400 },
-    extraPerKm: { hatchback: 11, sedan: 13, suv: 17, crysta: 20, tempo: 26 },
+    price: { hatchback: 2050, dzire: 2400, etios: 2600, ertiga: 2900, innova: 3250, crysta: 3650, tempo: 5900, urbania: 7500 },
+    extraPerHour: { hatchback: 150, dzire: 175, etios: 175, ertiga: 200, innova: 200, crysta: 250, tempo: 350, urbania: 450 },
+    extraPerKm: { hatchback: 11, dzire: 13, etios: 14, ertiga: 15, innova: 16, crysta: 18, tempo: 24, urbania: 28 },
   },
   {
     id: "12h120km",
     label: "12 hours / 120 km",
     hours: 12,
     km: 120,
-    price: { hatchback: 2600, sedan: 3000, suv: 3900, crysta: 4600, tempo: 7500 },
-    extraPerHour: { hatchback: 150, sedan: 180, suv: 250, crysta: 300, tempo: 400 },
-    extraPerKm: { hatchback: 11, sedan: 13, suv: 17, crysta: 20, tempo: 26 },
+    price: { hatchback: 2800, dzire: 3300, etios: 3550, ertiga: 4000, innova: 4450, crysta: 5000, tempo: 8100, urbania: 10300 },
+    extraPerHour: { hatchback: 150, dzire: 175, etios: 175, ertiga: 200, innova: 200, crysta: 250, tempo: 350, urbania: 450 },
+    extraPerKm: { hatchback: 11, dzire: 13, etios: 14, ertiga: 15, innova: 16, crysta: 18, tempo: 24, urbania: 28 },
   },
 ];
 
@@ -257,8 +272,8 @@ export const RENTAL_PACKAGES: {
  *  Per-km with a minimum fare, so a 2 km hop is never quoted at ₹26.
  */
 export const LOCAL = {
-  perKm: { hatchback: 15, sedan: 18, suv: 23, crysta: 27, tempo: 36 } satisfies PerCab,
-  minFare: { hatchback: 350, sedan: 400, suv: 550, crysta: 650, tempo: 950 } satisfies PerCab,
+  perKm: { hatchback: 14, dzire: 17, etios: 18, ertiga: 21, innova: 24, crysta: 27, tempo: 34, urbania: 40 } satisfies PerCab,
+  minFare: { hatchback: 350, dzire: 400, etios: 450, ertiga: 550, innova: 650, crysta: 750, tempo: 1100, urbania: 1400 } satisfies PerCab,
 };
 
 /** --------------------------------------------------------- OUTSTATION ROUTES
@@ -290,7 +305,7 @@ export const ROUTES: {
     from: "Mumbai",
     to: "Lonavala",
     km: 83,
-    oneWayFlat: { hatchback: 1500, sedan: 1800, suv: 2250, crysta: 2850, tempo: 3600 },
+    oneWayFlat: { hatchback: 1650, dzire: 1950, etios: 2100, ertiga: 2250, innova: 2550, crysta: 2850, tempo: 3600, urbania: 4200 },
   },
   { from: "Mumbai", to: "Khandala", km: 80 },
   { from: "Mumbai", to: "Matheran", km: 85 },
@@ -298,7 +313,7 @@ export const ROUTES: {
     from: "Mumbai",
     to: "Alibaug",
     km: 100,
-    oneWayFlat: { hatchback: 1900, sedan: 2300, suv: 2900, crysta: 3650, tempo: 4600 },
+    oneWayFlat: { hatchback: 2450, dzire: 2900, etios: 3100, ertiga: 3350, innova: 3800, crysta: 4250, tempo: 5350, urbania: 6250 },
   },
   { from: "Mumbai", to: "Igatpuri", km: 120 },
   { from: "Mumbai", to: "Karjat", km: 65 },
@@ -308,16 +323,26 @@ export const ROUTES: {
     from: "Mumbai",
     to: "Pune",
     km: 150,
-    oneWayFlat: { hatchback: 1850, sedan: 2200, suv: 2750, crysta: 3500, tempo: 4400 },
+    oneWayFlat: { hatchback: 1950, dzire: 2300, etios: 2500, ertiga: 2650, innova: 3000, crysta: 3350, tempo: 4250, urbania: 4950 },
   },
 
   // Hill stations and pilgrimage
   { from: "Mumbai", to: "Nashik", km: 165 },
   { from: "Mumbai", to: "Trimbakeshwar", km: 180 },
   { from: "Mumbai", to: "Bhimashankar", km: 215 },
-  { from: "Mumbai", to: "Shirdi", km: 240 },
+  {
+    from: "Mumbai",
+    to: "Shirdi",
+    km: 240,
+    oneWayFlat: { hatchback: 2550, dzire: 3000, etios: 3250, ertiga: 3450, innova: 3900, crysta: 4400, tempo: 5550, urbania: 6450 },
+  },
   { from: "Mumbai", to: "Panchgani", km: 245 },
-  { from: "Mumbai", to: "Mahabaleshwar", km: 250 },
+  {
+    from: "Mumbai",
+    to: "Mahabaleshwar",
+    km: 250,
+    oneWayFlat: { hatchback: 3050, dzire: 3600, etios: 3900, ertiga: 4150, innova: 4700, crysta: 5250, tempo: 6650, urbania: 7750 },
+  },
   { from: "Mumbai", to: "Lavasa", km: 200 },
 
   // Konkan coast
@@ -326,7 +351,12 @@ export const ROUTES: {
   { from: "Mumbai", to: "Ratnagiri", km: 330 },
   { from: "Mumbai", to: "Ganpatipule", km: 355 },
   { from: "Mumbai", to: "Tarkarli", km: 520 },
-  { from: "Mumbai", to: "Goa", km: 590 },
+  {
+    from: "Mumbai",
+    to: "Goa",
+    km: 590,
+    oneWayFlat: { hatchback: 7550, dzire: 8900, etios: 9600, ertiga: 10250, innova: 11650, crysta: 13000, tempo: 16450, urbania: 19150 },
+  },
 
   // North and inland
   { from: "Mumbai", to: "Daman", km: 175 },

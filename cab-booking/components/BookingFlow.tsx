@@ -419,7 +419,12 @@ export function BookingFlow() {
                   key={cabTypeId}
                   onClick={() => setSelectedCab(cabTypeId)}
                   aria-pressed={active}
-                  className={`flex items-center justify-between gap-3 rounded-xl border-2 p-3.5 text-left transition ${
+                  // min-w-0 is load-bearing: as a grid item this button defaults to
+                  // min-width:auto, and the truncated model line below sets
+                  // white-space:nowrap — so without it the row's min-content is the
+                  // full "Maruti Ertiga, Toyota Rumion, Kia Carens" string and the
+                  // whole page scrolls sideways on a phone.
+                  className={`flex min-w-0 items-center justify-between gap-3 rounded-xl border-2 p-3.5 text-left transition ${
                     active ? "border-brand-500 bg-brand-50" : "border-ink-200 bg-white hover:border-ink-300"
                   }`}
                 >

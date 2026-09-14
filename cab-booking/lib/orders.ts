@@ -56,8 +56,6 @@ export async function createOrder(input: CreateOrderInput): Promise<Order> {
     returnAt: input.returnAt,
     zoneId: input.zoneId,
     packageId: input.packageId,
-    extraHours: input.extraHours,
-    extraKm: input.extraKm,
   });
 
   // Double-tap on a slow mobile connection must not create two bookings.
