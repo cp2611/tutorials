@@ -55,11 +55,32 @@ npm run dev        # http://localhost:3000
 ```
 
 It starts with no configuration at all: orders go to `.data/orders.json` and
-notifications are simply skipped. To open the admin panel locally:
+notifications are simply skipped.
+
+The admin panel is the one page that needs a value, because it holds customer
+names, phones and addresses and is never left open. Create a file called
+`.env.local` inside `cab-booking/`:
+
+```
+ADMIN_PASSWORD=test123
+ADMIN_SECRET=any-long-random-string
+```
+
+Then restart (`Ctrl+C`, `npm run dev`) — Next.js reads `.env.local` at startup,
+not per request — and visit http://localhost:3000/admin. Without it the login
+replies `ADMIN_PASSWORD is not set`, which is the panel refusing to unlock
+rather than a bug.
+
+A `.env.local` works the same on macOS, Linux and Windows. Creating it from a
+terminal avoids Explorer or Finder silently appending `.txt`:
 
 ```bash
-ADMIN_PASSWORD=test123 ADMIN_SECRET=anything npm run dev
-# then visit http://localhost:3000/admin
+# macOS / Linux
+printf 'ADMIN_PASSWORD=test123\nADMIN_SECRET=any-long-random-string\n' > .env.local
+```
+```powershell
+# Windows PowerShell
+"ADMIN_PASSWORD=test123`nADMIN_SECRET=any-long-random-string" | Set-Content .env.local
 ```
 
 ---
