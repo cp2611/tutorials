@@ -204,7 +204,7 @@ Current behaviour with the shipped defaults:
 |---|---|---|
 | Local drop, 5 km | ₹400 | ₹200 (50%) |
 | Airport ⇄ South Mumbai | ₹880 | ₹250 (28%) |
-| Mumbai Darshan, 8 hrs / 80 km | ₹2,200 | ₹650 (30%) |
+| Mumbai Darshan, 14 hrs / 140 km | ₹3,300 | ₹990 (30%) |
 | Mumbai → Pune, one-way drop | ₹2,300 | ₹650 (28%) |
 | Mumbai → Goa, 5 days, Crysta | ₹24,500 | ₹2,450 (10%) |
 
@@ -232,7 +232,8 @@ haggles on WhatsApp, which they will.
 | Mumbai → Mahabaleshwar, one way | ₹3,200–3,954 | ₹3,600 |
 | Mumbai → Goa, one way | ₹7,061–10,703 | ₹8,900 |
 | Airport ⇄ South Mumbai | ₹750–900 | ₹880 |
-| Mumbai Darshan, 8 hrs / 80 km | ₹1,800–2,400 | ₹2,200 |
+| Mumbai Darshan, 8 hrs / 80 km (market shape) | ₹1,800–2,400 | — |
+| Mumbai Darshan, 14 hrs / 140 km (ours) | — | ₹3,300 |
 | Local rental, 8 hrs / 80 km | ₹2,000–3,000 | ₹2,400 |
 
 ### Pricing by car model, not by category
@@ -258,6 +259,36 @@ Published cards for comparison: Dzire/Etios ₹12–13/km, Ertiga ₹13–15, In
 Flat prices on the six featured routes are set from the surveyed midpoint for a
 Dzire and scaled across this ladder, so the model spread stays consistent
 whichever route a customer looks at.
+
+### Mumbai Darshan: a published running order, priced as a full day
+
+Sightseeing is its own trip type, not a relabelled hourly rental. Darshan is a
+product people search for by name, so it carries a **timed running order** —
+fourteen stops from Siddhivinayak at 8 AM through to Juhu at 10 PM. A customer
+can picture the whole day before paying, which is what makes them pick you over
+a site that says only "8 hours / 80 km". Times are labelled as shifting with
+the actual pickup, because the customer chooses that.
+
+The package is priced as the **14-hour day it actually is** — ₹3,300 for a
+Dzire, derived from the package's own overage rates. The market sells an 8 hr /
+80 km Darshan at ₹1,800–2,400, so this is a bigger product at a bigger price,
+not an overcharge. Selling this itinerary at the 8-hour price would end every
+booking at midnight with six hours of overage and an argument — exactly what
+publishing the rates is meant to prevent.
+
+Half day (5 hrs) and Mumbai by Night (4 hrs) carry their own shorter orders.
+
+### The driver's number is held back until pickup is close
+
+Vehicle details — model and number plate — go out the moment a cab is assigned,
+because that is what reassures someone who has already paid. The driver's
+personal number waits until roughly two hours before pickup.
+
+A customer and a driver holding each other's numbers a week early is how the
+next trip gets arranged without you. `driverContactHoursBefore` in
+`config/business.ts` sets the window, and the booking page, the track page, the
+assignment email and the terms all read that one value — so the published
+promise cannot drift from what the site does.
 
 ### One-way and round trip are different products
 
