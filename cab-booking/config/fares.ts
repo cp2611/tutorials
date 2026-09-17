@@ -168,8 +168,12 @@ export const TOUR_PACKAGES: {
   label: string;
   hours: number;
   km: number;
-  /** Shown on the pricing page and repeated in the booking confirmation. */
-  highlights: string[];
+  /**
+   * The published running order. Times assume a standard morning start and
+   * shift with the customer's actual pickup — they are shown so a customer can
+   * picture the day, not as a contract.
+   */
+  itinerary: { time: string; place: string }[];
   price: PerCab;
   extraPerHour: PerCab;
   extraPerKm: PerCab;
@@ -177,19 +181,27 @@ export const TOUR_PACKAGES: {
   {
     id: "darshan_full_day",
     label: "Mumbai Darshan — full day",
-    hours: 8,
-    km: 80,
-    highlights: [
-      "Gateway of India",
-      "Marine Drive & Nariman Point",
-      "Siddhivinayak Temple",
-      "Haji Ali Dargah",
-      "Hanging Gardens & Kamala Nehru Park",
-      "Dhobi Ghat",
-      "Bandra–Worli Sea Link",
-      "Juhu Beach",
+    // 8 AM to 10 PM is a fourteen-hour day. Priced as one, so nobody is handed
+    // six hours of overage at midnight.
+    hours: 14,
+    km: 140,
+    itinerary: [
+      { time: "8:00–9:00", place: "Siddhivinayak Temple" },
+      { time: "9:15–10:00", place: "Breakfast" },
+      { time: "10:30–11:15", place: "CSMT" },
+      { time: "11:15–12:00", place: "Fort, Flora Fountain & Horniman Circle" },
+      { time: "12:15–1:15", place: "Gateway of India" },
+      { time: "1:15–2:00", place: "Colaba Causeway" },
+      { time: "2:00–3:00", place: "Lunch" },
+      { time: "3:15–4:00", place: "Kala Ghoda / CSMVS" },
+      { time: "4:15–5:00", place: "Hanging Gardens / Malabar Hill" },
+      { time: "5:15–6:30", place: "Marine Drive + Chowpatty" },
+      { time: "6:45–7:15", place: "Worli Sea Face" },
+      { time: "7:15–7:45", place: "Bandra–Worli Sea Link" },
+      { time: "8:00–8:45", place: "Bandra Bandstand" },
+      { time: "9:00–10:00", place: "Juhu + dinner" },
     ],
-    price: { hatchback: 1900, dzire: 2200, etios: 2400, ertiga: 2700, innova: 3000, crysta: 3400, tempo: 5500, urbania: 7000 },
+    price: { hatchback: 2850, dzire: 3300, etios: 3600, ertiga: 4050, innova: 4500, crysta: 5100, tempo: 8250, urbania: 10500 },
     extraPerHour: { hatchback: 150, dzire: 175, etios: 175, ertiga: 200, innova: 200, crysta: 250, tempo: 350, urbania: 450 },
     extraPerKm: { hatchback: 11, dzire: 13, etios: 14, ertiga: 15, innova: 16, crysta: 18, tempo: 24, urbania: 28 },
   },
@@ -198,12 +210,12 @@ export const TOUR_PACKAGES: {
     label: "Mumbai Darshan — half day",
     hours: 5,
     km: 50,
-    highlights: [
-      "Gateway of India",
-      "Marine Drive",
-      "Siddhivinayak Temple",
-      "Haji Ali Dargah",
-      "Bandra–Worli Sea Link",
+    itinerary: [
+      { time: "8:00–9:00", place: "Siddhivinayak Temple" },
+      { time: "9:30–10:15", place: "CSMT" },
+      { time: "10:15–11:00", place: "Fort, Flora Fountain & Horniman Circle" },
+      { time: "11:15–12:15", place: "Gateway of India" },
+      { time: "12:15–1:00", place: "Colaba Causeway" },
     ],
     price: { hatchback: 1250, dzire: 1450, etios: 1550, ertiga: 1750, innova: 1950, crysta: 2200, tempo: 3600, urbania: 4600 },
     extraPerHour: { hatchback: 150, dzire: 175, etios: 175, ertiga: 200, innova: 200, crysta: 250, tempo: 350, urbania: 450 },
@@ -214,12 +226,12 @@ export const TOUR_PACKAGES: {
     label: "Mumbai by Night",
     hours: 4,
     km: 40,
-    highlights: [
-      "Marine Drive (Queen's Necklace)",
-      "Bandra–Worli Sea Link",
-      "Haji Ali by night",
-      "Gateway of India & Colaba Causeway",
-      "Juhu Beach",
+    itinerary: [
+      { time: "6:00–6:30", place: "Worli Sea Face" },
+      { time: "6:30–7:00", place: "Bandra–Worli Sea Link" },
+      { time: "7:15–8:00", place: "Bandra Bandstand" },
+      { time: "8:15–9:00", place: "Marine Drive + Chowpatty" },
+      { time: "9:00–10:00", place: "Juhu Beach + dinner" },
     ],
     price: { hatchback: 1100, dzire: 1300, etios: 1400, ertiga: 1550, innova: 1750, crysta: 1950, tempo: 3200, urbania: 4100 },
     extraPerHour: { hatchback: 150, dzire: 175, etios: 175, ertiga: 200, innova: 200, crysta: 250, tempo: 350, urbania: 450 },

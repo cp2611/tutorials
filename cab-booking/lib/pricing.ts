@@ -233,7 +233,9 @@ export function buildQuote(input: QuoteInput): Quote {
         detail: `${pkg.hours} hours / ${pkg.km} km included, car and driver at your disposal.`,
         amount: money(pkg.price[cab.id]),
       });
-      notes.push(`Stops: ${pkg.highlights.join(" · ")}.`);
+      notes.push(
+        `Itinerary: ${pkg.itinerary.map((i) => i.place).join(" · ")}. Times shift with your pickup.`,
+      );
       notes.push(overageRule(pkg, cab.id));
       break;
     }

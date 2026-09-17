@@ -7,13 +7,13 @@ import "./globals.css";
 
 export const metadata: Metadata = {
   title: {
-    default: `${BUSINESS.brandName} — Book a cab in 60 seconds`,
+    default: `${BUSINESS.brandName} — Book a Mumbai cab in a few taps`,
     template: `%s · ${BUSINESS.brandName}`,
   },
   description: `${BUSINESS.tagline}. Transparent fares, no hidden charges. Pay a small advance, settle the rest with the driver.`,
   metadataBase: new URL(BUSINESS.siteUrl),
   openGraph: {
-    title: `${BUSINESS.brandName} — Book a cab in 60 seconds`,
+    title: `${BUSINESS.brandName} — Book a Mumbai cab in a few taps`,
     description: BUSINESS.tagline,
     type: "website",
   },

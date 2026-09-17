@@ -33,8 +33,18 @@ export const BUSINESS = {
   /** Name the customer sees in their UPI app when the QR opens. */
   upiPayeeName: process.env.UPI_PAYEE_NAME || "Example Travels",
 
-  /** How quickly you promise to send cab + driver details. Keep it honest. */
+  /** How quickly you promise to send the vehicle details. Keep it honest. */
   confirmationWindowHours: 2,
+
+  /**
+   * How long before pickup the driver's personal number goes to the customer.
+   *
+   * Vehicle details go out as soon as the cab is assigned, because that is what
+   * reassures someone who has paid. The driver's number waits: handing it over
+   * days early is how a customer and a driver arrange the next trip between
+   * themselves and leave you out of it.
+   */
+  driverContactHoursBefore: 2,
 
   /** Social proof shown on the landing page. Keep these truthful. */
   trustBadges: [

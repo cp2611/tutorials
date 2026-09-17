@@ -4,7 +4,7 @@ import { BUSINESS } from "@/config/business";
 import { OrderSummary } from "@/components/OrderSummary";
 import { StatusTimeline } from "@/components/StatusTimeline";
 import { getOrder } from "@/lib/db";
-import { customerMayView } from "@/lib/orders";
+import { customerMayView, driverContactReleased } from "@/lib/orders";
 import { inr } from "@/lib/format";
 import { STATUS_LABELS } from "@/lib/types";
 
@@ -73,10 +73,17 @@ export default async function TrackPage({
             <div className="mt-4 rounded-xl border border-green-300 bg-green-50 p-4 text-sm">
               <p className="font-bold text-ink-900">🚗 Your cab</p>
               <p className="mt-1.5 text-ink-700">
-                {order.driverName} · {order.driverPhone}
-                <br />
                 {order.vehicleModel} · <strong>{order.vehicleNumber}</strong>
+                <br />
+                {order.driverName}
+                {driverContactReleased(order) ? ` · ${order.driverPhone}` : ""}
               </p>
+              {!driverContactReleased(order) && (
+                <p className="mt-1.5 text-xs text-ink-600">
+                  Driver&apos;s number reaches you about {BUSINESS.driverContactHoursBefore} hours
+                  before pickup.
+                </p>
+              )}
               <p className="mt-2 text-ink-700">
                 Balance <strong>{inr(order.balanceAmount)}</strong> payable to the driver, plus tolls,
                 parking and state tax.

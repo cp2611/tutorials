@@ -1,4 +1,5 @@
 import { randomInt } from "node:crypto";
+import { BUSINESS } from "@/config/business";
 import { buildQuote, validateSchedule } from "@/lib/pricing";
 import { insertOrder, recentOrdersByPhone } from "@/lib/db";
 import { normalisePhone } from "@/lib/format";
@@ -101,6 +102,21 @@ export async function createOrder(input: CreateOrderInput): Promise<Order> {
 
   await insertOrder(order);
   return order;
+}
+
+/**
+ * Whether the driver's personal number may be shown yet.
+ *
+ * The vehicle details go out the moment a cab is assigned — that is what
+ * reassures a customer who has already paid. The driver's number is held back
+ * until shortly before pickup, because a customer and a driver holding each
+ * other's numbers a week early is how the next booking happens without you.
+ */
+export function driverContactReleased(order: Order, now = Date.now()): boolean {
+  if (!order.pickupAt) return true;
+  const pickup = new Date(order.pickupAt).getTime();
+  if (!Number.isFinite(pickup)) return true;
+  return now >= pickup - BUSINESS.driverContactHoursBefore * 3600_000;
 }
 
 /** Track-page access: the booking ID alone is never enough to read personal data. */

@@ -318,17 +318,23 @@ export function BookingFlow() {
               {selectedTour && (
                 <div className="mt-3 rounded-xl bg-ink-50 p-3.5">
                   <p className="text-xs font-semibold uppercase tracking-wide text-ink-500">
-                    Where you&apos;ll go
+                    Your day — {selectedTour.hours} hrs, {selectedTour.itinerary.length} stops
                   </p>
-                  <ul className="mt-2 flex flex-wrap gap-1.5">
-                    {selectedTour.highlights.map((h) => (
-                      <li key={h} className="rounded-full bg-white px-2.5 py-1 text-xs text-ink-700 ring-1 ring-ink-200">
-                        {h}
+                  {/* A running order sells a tour far better than a bag of place
+                      names: the customer can picture the whole day before paying. */}
+                  <ol className="mt-2.5 grid gap-1.5">
+                    {selectedTour.itinerary.map((stop) => (
+                      <li key={stop.time} className="flex gap-2.5 text-xs leading-relaxed">
+                        <span className="w-[72px] shrink-0 font-medium tabular-nums text-ink-500">
+                          {stop.time}
+                        </span>
+                        <span className="min-w-0 text-ink-800">{stop.place}</span>
                       </li>
                     ))}
-                  </ul>
-                  <p className="mt-2.5 text-xs text-ink-500">
-                    Entry tickets and ferry charges are not included.
+                  </ol>
+                  <p className="mt-3 border-t border-ink-200 pt-2.5 text-xs text-ink-500">
+                    Times shift with your pickup time. Entry tickets and ferry charges are not
+                    included.
                   </p>
                 </div>
               )}

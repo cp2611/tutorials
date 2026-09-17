@@ -23,8 +23,9 @@ export default function TermsPage() {
           against our bank account, usually within a couple of hours during working time.
         </li>
         <li>
-          Cab and driver details are shared within {BUSINESS.confirmationWindowHours} hours of
-          confirmation, and in any case before pickup.
+          Vehicle details are shared within {BUSINESS.confirmationWindowHours} hours of
+          confirmation. The driver&apos;s contact number is shared approximately{" "}
+          {BUSINESS.driverContactHoursBefore} hours before pickup.
         </li>
         <li>
           Minimum notice is {LEAD_TIME_HOURS.local}–{LEAD_TIME_HOURS.outstation_round} hours depending

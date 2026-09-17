@@ -15,7 +15,7 @@ export default function HomePage() {
     <div className="grid gap-6">
       <section className="text-center">
         <h1 className="text-balance text-3xl font-extrabold leading-tight tracking-tight text-ink-900 sm:text-4xl">
-          Mumbai cabs, booked in 60 seconds
+          Mumbai cabs, booked in a few taps
         </h1>
         <p className="mx-auto mt-2 max-w-xl text-balance text-ink-600">
           {BUSINESS.tagline}. See the full fare before you book — pay a small advance,
@@ -32,15 +32,22 @@ export default function HomePage() {
 
       <section className="card p-5">
         <h2 className="text-base font-bold text-ink-900">How it works</h2>
-        <ol className="mt-3 grid gap-4 sm:grid-cols-4">
+        <ol className="mt-3 grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
           {[
             ["Tell us the trip", "Pick your route, date and cab. See the full fare instantly."],
-            ["Pay the advance", "Scan the UPI code. The amount and booking number are already filled in."],
             [
-              "Message us on WhatsApp",
-              `One tap, details pre-filled. We confirm and assign your cab within ${BUSINESS.confirmationWindowHours} hours.`,
+              "Pay now, or ask first",
+              "Scan the UPI code — amount and booking number already filled in. Not sure? Message us on WhatsApp with your booking attached.",
             ],
-            ["Travel", "Pay the balance to the driver at drop, plus tolls and parking."],
+            [
+              "We confirm it",
+              "Once your advance is in, you get a confirmation and a receipt for what you paid and what's left.",
+            ],
+            [
+              "Your cab is assigned",
+              `We arrange it with our partner and send you the vehicle details. The driver's number reaches you about ${BUSINESS.driverContactHoursBefore} hours before pickup.`,
+            ],
+            ["Travel", "Pay the balance to the driver at drop, plus tolls, parking and any state permit."],
           ].map(([title, body], i) => (
             <li key={title}>
               <span className="grid h-7 w-7 place-items-center rounded-full bg-ink-900 text-xs font-bold text-white">

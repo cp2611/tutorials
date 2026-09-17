@@ -7,6 +7,7 @@ import { OrderSummary } from "@/components/OrderSummary";
 import { PaymentPanel } from "@/components/PaymentPanel";
 import { StatusTimeline } from "@/components/StatusTimeline";
 import { getOrder } from "@/lib/db";
+import { driverContactReleased } from "@/lib/orders";
 import { inr, istDateTime } from "@/lib/format";
 import { buildUpiQrDataUrl, buildUpiUri } from "@/lib/upi";
 import { questionLink } from "@/lib/whatsapp";
@@ -29,6 +30,7 @@ export default async function BookingPage({ params }: { params: Promise<{ id: st
   if (!order) notFound();
 
   const awaitingPayment = order.status === "PENDING_PAYMENT";
+  const contactReleased = driverContactReleased(order);
   const qrDataUrl = awaitingPayment ? await buildUpiQrDataUrl(order.id, order.advanceAmount) : "";
   const upiUri = awaitingPayment ? buildUpiUri(order.id, order.advanceAmount) : "";
 
@@ -66,10 +68,10 @@ export default async function BookingPage({ params }: { params: Promise<{ id: st
           <h2 className="text-base font-bold text-ink-900">🚗 Your cab</h2>
           <dl className="mt-3 divide-y divide-green-200 text-sm">
             {[
-              ["Driver", order.driverName],
-              ["Driver phone", order.driverPhone],
               ["Vehicle", order.vehicleModel],
               ["Number plate", order.vehicleNumber],
+              ["Driver", order.driverName],
+              ...(contactReleased ? [["Driver phone", order.driverPhone]] : []),
             ]
               .filter(([, v]) => v)
               .map(([k, v]) => (
@@ -79,6 +81,14 @@ export default async function BookingPage({ params }: { params: Promise<{ id: st
                 </div>
               ))}
           </dl>
+
+          {!contactReleased && (
+            <p className="mt-3 rounded-xl bg-white/70 px-4 py-3 text-sm text-ink-700">
+              The driver&apos;s number reaches you about{" "}
+              {BUSINESS.driverContactHoursBefore} hours before pickup, by WhatsApp and email.
+              Until then, anything you need goes through us on {BUSINESS.phone}.
+            </p>
+          )}
           <p className="mt-3 text-sm text-ink-700">
             Pay <strong>{inr(order.balanceAmount)}</strong> to the driver at drop, plus tolls, parking
             and state permit charges.

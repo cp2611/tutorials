@@ -215,13 +215,16 @@ function assignmentEmailHtml(o: Order): string {
       <h2 style="margin:0 0 4px">Your cab is assigned 🚗</h2>
       <p style="margin:0 0 16px;color:#555">Booking <strong>${escapeHtml(o.id)}</strong> · Pickup ${escapeHtml(istDateTime(o.pickupAt))}</p>
       <table cellpadding="6" style="border-collapse:collapse;width:100%;font-size:14px">
-        <tr><td style="border-bottom:1px solid #eee;color:#666;width:38%">Driver</td><td style="border-bottom:1px solid #eee"><strong>${escapeHtml(o.driverName ?? "—")}</strong></td></tr>
-        <tr><td style="border-bottom:1px solid #eee;color:#666">Driver phone</td><td style="border-bottom:1px solid #eee"><strong>${escapeHtml(o.driverPhone ?? "—")}</strong></td></tr>
-        <tr><td style="border-bottom:1px solid #eee;color:#666">Vehicle</td><td style="border-bottom:1px solid #eee"><strong>${escapeHtml(o.vehicleModel ?? "—")}</strong></td></tr>
+        <tr><td style="border-bottom:1px solid #eee;color:#666;width:38%">Vehicle</td><td style="border-bottom:1px solid #eee"><strong>${escapeHtml(o.vehicleModel ?? "—")}</strong></td></tr>
         <tr><td style="border-bottom:1px solid #eee;color:#666">Number plate</td><td style="border-bottom:1px solid #eee"><strong>${escapeHtml(o.vehicleNumber ?? "—")}</strong></td></tr>
+        <tr><td style="border-bottom:1px solid #eee;color:#666">Driver</td><td style="border-bottom:1px solid #eee"><strong>${escapeHtml(o.driverName ?? "—")}</strong></td></tr>
         <tr><td style="border-bottom:1px solid #eee;color:#666">Balance to pay driver</td><td style="border-bottom:1px solid #eee"><strong>${inr(o.balanceAmount)}</strong> + tolls, parking, state tax</td></tr>
       </table>
-      <p style="font-size:13px;color:#666;margin-top:16px">Any issue during the trip, call us first at ${BUSINESS.phone} — not the driver.</p>
+      <p style="margin-top:16px;font-size:13px;color:#555;background:#f1f5f9;padding:11px 13px;border-radius:6px">
+        We&rsquo;ll send the driver&rsquo;s number about ${BUSINESS.driverContactHoursBefore} hours before pickup.
+        Until then, anything you need goes through us.
+      </p>
+      <p style="font-size:13px;color:#666;margin-top:14px">Any issue during the trip, call us first at ${BUSINESS.phone} — not the driver.</p>
     </div>`;
 }
 
